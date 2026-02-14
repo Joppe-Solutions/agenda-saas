@@ -1,0 +1,7 @@
+DROP TABLE IF EXISTS bookings;
+DROP TABLE IF EXISTS assets;
+DROP TABLE IF EXISTS merchants;
+
+DROP TYPE IF EXISTS booking_status;
+DROP TYPE IF EXISTS pricing_type;
+DROP TYPE IF EXISTS niche;

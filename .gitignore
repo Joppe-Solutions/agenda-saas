@@ -1,0 +1,14 @@
+node_modules
+.next
+.env
+.env.*
+!.env.example
+dist
+.DS_Store
+.encore
+encore.gen
+*.tsbuildinfo
+
+# Local editor files
+.vscode
+.idea

@@ -1,0 +1,14 @@
+{
+  "name": "fish-saas",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev:frontend": "npm --workspace frontend run dev",
+    "lint:frontend": "npm --workspace frontend run lint",
+    "typecheck:frontend": "npm --workspace frontend run typecheck"
+  }
+}
