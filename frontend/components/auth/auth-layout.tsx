@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { CalendarCheck, CheckCircle2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
 
 const features = [
   "Gerencie todas as suas reservas em um só lugar",
@@ -11,15 +12,11 @@ const features = [
 export function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
-      {/* Left side - Branding */}
-      <div className="relative hidden bg-primary lg:block">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary to-blue-700" />
-        <div className="relative flex h-full flex-col justify-between p-12 text-primary-foreground">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">
-              <CalendarCheck className="h-6 w-6" />
-            </div>
-            <span className="text-2xl font-bold">reserva.online</span>
+      <div className="relative hidden bg-gradient-to-br from-navy-900 via-navy-800 to-navy-950 lg:block">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-cyan-500/20 via-transparent to-transparent" />
+        <div className="relative flex h-full flex-col justify-between p-12 text-white">
+          <Link href="/" className="flex items-center">
+            <Logo variant="full" size="md" />
           </Link>
 
           <div className="space-y-8">
@@ -29,7 +26,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
                 <br />
                 maximize seus resultados.
               </h1>
-              <p className="mt-4 text-lg text-primary-foreground/80">
+              <p className="mt-4 text-lg text-white/70">
                 Junte-se a centenas de empresários que já transformaram
                 a forma como gerenciam suas reservas.
               </p>
@@ -38,28 +35,25 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
             <ul className="space-y-4">
               {features.map((feature) => (
                 <li key={feature} className="flex items-center gap-3">
-                  <CheckCircle2 className="h-5 w-5 shrink-0 text-primary-foreground/80" />
-                  <span className="text-primary-foreground/90">{feature}</span>
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-500/20">
+                    <CheckCircle2 className="h-4 w-4 text-cyan-400" />
+                  </div>
+                  <span className="text-white/80">{feature}</span>
                 </li>
               ))}
             </ul>
           </div>
 
-          <p className="text-sm text-primary-foreground/60">
+          <p className="text-sm text-white/40">
             © {new Date().getFullYear()} reserva.online. Todos os direitos reservados.
           </p>
         </div>
       </div>
 
-      {/* Right side - Auth form */}
-      <div className="flex flex-col">
-        {/* Mobile header */}
+      <div className="flex flex-col bg-background">
         <header className="flex items-center justify-between border-b p-4 lg:hidden">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <CalendarCheck className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold">reserva.online</span>
+          <Link href="/" className="flex items-center">
+            <Logo variant="full" size="sm" />
           </Link>
         </header>
 

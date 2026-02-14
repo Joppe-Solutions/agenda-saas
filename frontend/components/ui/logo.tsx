@@ -8,9 +8,9 @@ interface LogoProps {
 }
 
 const sizes = {
-  sm: { icon: 24, full: 100 },
-  md: { icon: 32, full: 140 },
-  lg: { icon: 40, full: 180 },
+  sm: { icon: 20, full: 28 },
+  md: { icon: 24, full: 32 },
+  lg: { icon: 32, full: 40 },
 };
 
 export function Logo({ variant = "full", size = "md", className }: LogoProps) {

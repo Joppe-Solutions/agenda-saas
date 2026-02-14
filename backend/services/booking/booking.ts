@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { api, APIError } from "encore.dev/api";
 import { db } from "../../db/db";
 import { createBookingSchema, updateBookingStatusSchema } from "../shared/validators";
-import { createPixPayment, PaymentProvider } from "../payment/gateway";
+import { createPixPayment, PaymentProvider } from "../merchant/gateway";
 
 interface CheckAvailabilityParams {
   assetId: string;

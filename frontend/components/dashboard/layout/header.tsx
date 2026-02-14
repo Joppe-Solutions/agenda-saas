@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/sheet";
 import { MobileNav } from "./mobile-nav";
 import { Logo } from "@/components/ui/logo";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function DashboardHeader() {
   return (
@@ -53,6 +54,8 @@ export function DashboardHeader() {
             Nova Reserva
           </Link>
         </Button>
+
+        <ThemeToggle />
 
         <Button variant="ghost" size="icon" className="relative h-11 w-11 rounded-xl">
           <Bell className="h-5 w-5" />

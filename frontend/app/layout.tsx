@@ -4,6 +4,7 @@ import { ptBR } from "@clerk/localizations";
 import type { ComponentProps } from "react";
 import { Inter } from "next/font/google";
 import { JivoChat } from "@/components/jivo-chat";
+import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 const inter = Inter({ 
@@ -43,10 +44,17 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <ClerkProvider localization={clerkLocalization}>
-      <html lang="pt-BR" className={inter.variable}>
+      <html lang="pt-BR" className={inter.variable} suppressHydrationWarning>
         <body className="font-sans antialiased">
-          {children}
-          <JivoChat />
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+            <JivoChat />
+          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>
