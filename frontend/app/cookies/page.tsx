@@ -41,7 +41,7 @@ export default function CookiesPage() {
           <strong>_ga, _gid:</strong> Cookies do Google Analytics para análise de tráfego do site.
         </li>
         <li>
-          <strong>tawk_*:</strong> Cookies do Tawk.to para o chat de suporte ao vivo.
+          <strong>jivo_*:</strong> Cookies do JivoChat para o chat de suporte ao vivo.
         </li>
       </ul>
 
@@ -53,7 +53,7 @@ export default function CookiesPage() {
       <ul>
         <li>Google Analytics (análise de tráfego)</li>
         <li>Clerk (autenticação)</li>
-        <li>Tawk.to (chat ao vivo)</li>
+        <li>JivoChat (chat ao vivo)</li>
       </ul>
 
       <h2>5. Gerenciando Cookies</h2>

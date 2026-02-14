@@ -62,7 +62,7 @@ export function Hero() {
             <div className="aspect-video">
               <iframe
                 className="h-full w-full"
-                src="https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0&modestbranding=1"
+                src="https://www.youtube.com/embed/LXb3EKWsInQ?rel=0&modestbranding=1&autoplay=1&mute=1&loop=1&playlist=LXb3EKWsInQ"
                 title="Vídeo demonstrativo do reserva.online"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
