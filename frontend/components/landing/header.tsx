@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, X } from "lucide-react";
@@ -32,14 +32,14 @@ export function Header() {
       className="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 pt-4"
     >
       <nav
-        className={`flex items-center justify-between w-full max-w-6xl px-4 py-2.5 rounded-2xl transition-all duration-500 ${
+        className={`flex items-center justify-between w-full max-w-6xl px-6 py-3 rounded-2xl transition-all duration-500 ${
           scrolled
-            ? "bg-background/80 backdrop-blur-xl border border-border/80 shadow-lg shadow-black/10"
-            : "bg-background/40 backdrop-blur-md border border-border/40"
+            ? "bg-background/95 backdrop-blur-xl border border-border shadow-lg shadow-black/5"
+            : "bg-white/10 backdrop-blur-md border border-white/20"
         }`}
       >
         <Link href="/" className="flex items-center">
-          <Logo variant="full" size="sm" />
+          <Logo variant="full" size="sm" forceTheme={scrolled ? "light" : "dark"} />
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
@@ -47,15 +47,28 @@ export function Header() {
             <Link
               key={link.href}
               href={link.href}
-              className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-200 rounded-xl hover:bg-primary/5"
+              className={`px-4 py-2 text-sm font-medium transition-colors duration-200 rounded-xl ${
+                scrolled
+                  ? "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  : "text-white/90 hover:text-white hover:bg-white/10"
+              }`}
             >
               {link.label}
             </Link>
           ))}
         </nav>
 
-        <div className="hidden items-center gap-2 md:flex">
-          <Button variant="ghost" size="sm" asChild className="rounded-xl px-4">
+        <div className="hidden items-center gap-3 md:flex">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            asChild 
+            className={`rounded-xl px-4 ${
+              scrolled 
+                ? "" 
+                : "text-white hover:text-white hover:bg-white/10"
+            }`}
+          >
             <Link href="/sign-in">Entrar</Link>
           </Button>
           <Button
@@ -70,7 +83,11 @@ export function Header() {
         <div className="flex items-center gap-2 md:hidden">
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-lg">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className={`rounded-lg ${scrolled ? "" : "text-white hover:text-white hover:bg-white/10"}`}
+              >
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Menu</span>
               </Button>

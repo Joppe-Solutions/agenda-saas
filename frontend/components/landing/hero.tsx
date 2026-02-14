@@ -44,7 +44,7 @@ export function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl text-dark-fg"
+            className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl text-white"
           >
             Reservas online
             <span className="block bg-gradient-to-r from-primary to-cyan-400 bg-clip-text text-transparent">
@@ -56,7 +56,7 @@ export function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="mx-auto mt-6 max-w-2xl text-lg text-dark-muted sm:text-xl"
+            className="mx-auto mt-6 max-w-2xl text-lg text-slate-400 sm:text-xl"
           >
             Transforme seu negócio com um sistema de reservas completo. 
             Gerencie agendamentos e receba pagamentos via PIX.
@@ -86,7 +86,7 @@ export function Hero() {
             className="mt-10 flex flex-wrap items-center justify-center gap-6 sm:gap-8"
           >
             {socialProof.map((item, index) => (
-              <div key={index} className="flex items-center gap-2 text-sm text-dark-muted">
+              <div key={index} className="flex items-center gap-2 text-sm text-slate-400">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20">
                   <item.icon className="h-4 w-4 text-primary" />
                 </div>
@@ -95,26 +95,6 @@ export function Hero() {
             ))}
           </motion.div>
         </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.8, delay: 0.5 }}
-          className="relative mx-auto mt-16 max-w-4xl"
-        >
-          <div className="absolute -inset-2 bg-gradient-to-r from-primary/20 via-cyan-400/20 to-primary/20 rounded-3xl blur-2xl" />
-          <div className="relative overflow-hidden rounded-2xl border border-dark-border bg-dark-card shadow-xl">
-            <div className="aspect-video">
-              <iframe
-                className="h-full w-full"
-                src="https://www.youtube.com/embed/LXb3EKWsInQ?rel=0&modestbranding=1&autoplay=1&mute=1&loop=1&playlist=LXb3EKWsInQ"
-                title="Vídeo demonstrativo do reserva.online"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-              />
-            </div>
-          </div>
-        </motion.div>
       </div>
     </section>
   );
