@@ -1,33 +1,62 @@
+"use client";
+
+import { motion, useInView } from "framer-motion";
+import { useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 
 export function Hero() {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+
   return (
-    <section className="relative overflow-hidden">
+    <section className="relative overflow-hidden pt-20">
       <div className="absolute inset-0 gradient-mesh" />
 
       <div className="container relative mx-auto max-w-6xl px-4 py-16 sm:py-24 lg:py-32">
         <div className="mx-auto max-w-3xl text-center">
-          <Badge variant="info" className="mb-4 px-4 py-1.5 text-xs sm:mb-6 sm:text-sm">
-            Novo: Integração com PIX automático
-          </Badge>
+          <motion.div
+            ref={ref}
+            initial={{ opacity: 0, y: 20 }}
+            animate={isInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6 }}
+          >
+            <Badge variant="info" className="mb-4 px-4 py-1.5 text-xs sm:mb-6 sm:text-sm">
+              Novo: Integração com PIX automático
+            </Badge>
+          </motion.div>
 
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={isInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl"
+          >
             Reservas online
-            <span className="block bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
+            <span className="block bg-gradient-to-r from-primary to-cyan-400 bg-clip-text text-transparent">
               simples e profissionais
             </span>
-          </h1>
+          </motion.h1>
 
-          <p className="mx-auto mt-4 max-w-2xl text-base text-muted-foreground sm:mt-6 sm:text-lg md:text-xl">
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={isInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="mx-auto mt-4 max-w-2xl text-base text-muted-foreground sm:mt-6 sm:text-lg md:text-xl"
+          >
             Transforme seu negócio com um sistema de reservas completo.
             Gerencie agendamentos, receba pagamentos via PIX e ofereça
             uma experiência incrível aos seus clientes.
-          </p>
+          </motion.p>
 
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:mt-10 sm:flex-row sm:gap-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={isInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="mt-8 flex flex-col items-center justify-center gap-3 sm:mt-10 sm:flex-row sm:gap-4"
+          >
             <Button size="lg" className="h-12 w-full px-8 text-base sm:w-auto" asChild>
               <Link href="/sign-up">
                 Começar Gratuitamente
@@ -37,9 +66,14 @@ export function Hero() {
             <Button size="lg" variant="outline" className="h-12 w-full px-8 text-base sm:w-auto" asChild>
               <Link href="#como-funciona">Ver Como Funciona</Link>
             </Button>
-          </div>
+          </motion.div>
 
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground sm:mt-10 sm:gap-x-8 sm:text-sm">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={isInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground sm:mt-10 sm:gap-x-8 sm:text-sm"
+          >
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-success" />
               <span>Sem taxa de setup</span>
@@ -52,10 +86,15 @@ export function Hero() {
               <CheckCircle2 className="h-4 w-4 text-success" />
               <span>Suporte em português</span>
             </div>
-          </div>
+          </motion.div>
         </div>
 
-        <div className="relative mx-auto mt-12 max-w-4xl sm:mt-16">
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.8, delay: 0.5 }}
+          className="relative mx-auto mt-12 max-w-4xl sm:mt-16"
+        >
           <div className="overflow-hidden rounded-2xl border bg-card shadow-lg">
             <div className="aspect-video">
               <iframe
@@ -67,8 +106,8 @@ export function Hero() {
               />
             </div>
           </div>
-          <div className="absolute -inset-4 -z-10 bg-gradient-to-r from-blue-500/20 via-cyan-400/20 to-blue-400/20 opacity-50 blur-3xl" />
-        </div>
+          <div className="absolute -inset-4 -z-10 bg-gradient-to-r from-primary/20 via-cyan-400/20 to-primary/20 opacity-50 blur-3xl" />
+        </motion.div>
       </div>
     </section>
   );

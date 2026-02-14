@@ -1585,6 +1585,17 @@ export const getCustomerHistory = api(
       WHERE customer_id = ${customerId}
     `;
 
+    const tags = await db.queryAll<{
+      id: string;
+      name: string;
+      color: string;
+    }>`
+      SELECT t.id, t.name, t.color
+      FROM customer_tags t
+      JOIN customer_tag_assignments a ON a.tag_id = t.id
+      WHERE a.customer_id = ${customerId}
+    `;
+
     return {
       customer: {
         id: customer.id,
@@ -1601,6 +1612,11 @@ export const getCustomerHistory = api(
         totalSpent: Number(stats?.total_spent ?? 0),
         noShowCount: stats?.no_show_count ?? 0,
       },
+      tags: tags.map(t => ({
+        id: t.id,
+        name: t.name,
+        color: t.color,
+      })),
       bookings: bookings.map(b => ({
         id: b.id,
         resourceId: b.resource_id,
@@ -1615,5 +1631,84 @@ export const getCustomerHistory = api(
         createdAt: b.created_at.toISOString(),
       })),
     };
+  },
+);
+
+// ============ CUSTOMER TAGS ============
+
+export const listCustomerTags = api(
+  { expose: true, method: "GET", path: "/merchant/:merchantId/customer-tags" },
+  async ({ merchantId }: { merchantId: string }) => {
+    const rows = await db.queryAll<{
+      id: string;
+      name: string;
+      color: string;
+    }>`
+      SELECT id, name, color
+      FROM customer_tags
+      WHERE merchant_id = ${merchantId}
+      ORDER BY name ASC
+    `;
+
+    return {
+      tags: rows.map(row => ({
+        id: row.id,
+        name: row.name,
+        color: row.color,
+      })),
+    };
+  },
+);
+
+export const createCustomerTag = api(
+  { expose: true, method: "POST", path: "/customer-tag" },
+  async ({ merchantId, name, color }: { merchantId: string; name: string; color?: string }) => {
+    const tagId = randomUUID();
+
+    await db.exec`
+      INSERT INTO customer_tags (id, merchant_id, name, color)
+      VALUES (${tagId}, ${merchantId}, ${name}, ${color ?? '#FFB800'})
+    `;
+
+    return {
+      tag: {
+        id: tagId,
+        name,
+        color: color ?? '#FFB800',
+      },
+    };
+  },
+);
+
+export const deleteCustomerTag = api(
+  { expose: true, method: "DELETE", path: "/customer-tag/:tagId" },
+  async ({ tagId }: { tagId: string }) => {
+    await db.exec`
+      DELETE FROM customer_tags WHERE id = ${tagId}
+    `;
+    return { ok: true };
+  },
+);
+
+export const assignTagToCustomer = api(
+  { expose: true, method: "POST", path: "/customer/:customerId/tag/:tagId" },
+  async ({ customerId, tagId }: { customerId: string; tagId: string }) => {
+    await db.exec`
+      INSERT INTO customer_tag_assignments (customer_id, tag_id)
+      VALUES (${customerId}, ${tagId})
+      ON CONFLICT DO NOTHING
+    `;
+    return { ok: true };
+  },
+);
+
+export const removeTagFromCustomer = api(
+  { expose: true, method: "DELETE", path: "/customer/:customerId/tag/:tagId" },
+  async ({ customerId, tagId }: { customerId: string; tagId: string }) => {
+    await db.exec`
+      DELETE FROM customer_tag_assignments
+      WHERE customer_id = ${customerId} AND tag_id = ${tagId}
+    `;
+    return { ok: true };
   },
 );

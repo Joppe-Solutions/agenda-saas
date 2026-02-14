@@ -255,6 +255,16 @@ export async function getCustomerHistory(customerId: string) {
   }>(`/customer/${customerId}/history`);
 }
 
+export async function rescheduleBooking(
+  bookingId: string,
+  data: { newDate: string; newStartTime?: string; newEndTime?: string }
+) {
+  return request<{ booking: Booking }>(`/booking/${bookingId}/reschedule`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
 export { Resource as Asset };
 export { CreateResourceInput as CreateAssetInput };
 export { UpdateResourceInput as UpdateAssetInput };

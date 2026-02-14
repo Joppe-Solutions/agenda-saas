@@ -520,3 +520,105 @@ export const cancelExpiredBookings = api(
     return { cancelled: expiredBookings.length };
   },
 );
+
+interface RescheduleBookingParams {
+  bookingId: string;
+}
+
+interface RescheduleBookingBody {
+  newDate: string;
+  newStartTime?: string;
+  newEndTime?: string;
+}
+
+export const rescheduleBooking = api(
+  { expose: true, method: "POST", path: "/booking/:bookingId/reschedule" },
+  async ({ bookingId, newDate, newStartTime, newEndTime }: RescheduleBookingParams & RescheduleBookingBody) => {
+    const booking = await db.queryRow<{
+      id: string;
+      merchant_id: string;
+      resource_id: string;
+      status: Booking["status"];
+      customer_name: string;
+      customer_phone: string;
+      customer_email: string | null;
+      people_count: number;
+    }>`
+      SELECT id, merchant_id, resource_id, status, customer_name, customer_phone, customer_email, people_count
+      FROM bookings
+      WHERE id = ${bookingId}
+    `;
+
+    if (!booking) {
+      throw APIError.notFound("Booking not found");
+    }
+
+    if (booking.status === "cancelled" || booking.status === "completed" || booking.status === "no_show") {
+      throw APIError.invalidArgument("Cannot reschedule a cancelled, completed or no-show booking");
+    }
+
+    const hasConflict = await checkTimeConflict(booking.resource_id, newDate, newStartTime, newEndTime, bookingId);
+    if (hasConflict) {
+      throw APIError.alreadyExists("New time slot is not available");
+    }
+
+    const hasBlock = await checkBlockConflict(booking.resource_id, newDate, newStartTime, newEndTime);
+    if (hasBlock) {
+      throw APIError.alreadyExists("New time slot is blocked");
+    }
+
+    await db.exec`
+      UPDATE bookings
+      SET 
+        booking_date = ${newDate}::date,
+        start_time = ${newStartTime ?? null},
+        end_time = ${newEndTime ?? null},
+        updated_at = now()
+      WHERE id = ${bookingId}
+    `;
+
+    const updated = await db.queryRow<{
+      id: string;
+      resource_id: string;
+      merchant_id: string;
+      customer_name: string;
+      customer_phone: string;
+      customer_email: string | null;
+      booking_date: Date;
+      start_time: string | null;
+      end_time: string | null;
+      people_count: number;
+      status: Booking["status"];
+      deposit_amount: number;
+      total_amount: number;
+      notes: string | null;
+      internal_notes: string | null;
+    }>`
+      SELECT id, resource_id, merchant_id, customer_name, customer_phone, customer_email,
+             booking_date, start_time, end_time, people_count, status, deposit_amount, total_amount,
+             notes, internal_notes
+      FROM bookings
+      WHERE id = ${bookingId}
+    `;
+
+    return {
+      booking: {
+        id: updated!.id,
+        resourceId: updated!.resource_id,
+        merchantId: updated!.merchant_id,
+        customerName: updated!.customer_name,
+        customerPhone: updated!.customer_phone,
+        customerEmail: updated!.customer_email ?? undefined,
+        bookingDate: updated!.booking_date.toISOString().split('T')[0],
+        startTime: updated!.start_time ?? undefined,
+        endTime: updated!.end_time ?? undefined,
+        peopleCount: updated!.people_count,
+        status: updated!.status,
+        depositAmount: Number(updated!.deposit_amount),
+        totalAmount: Number(updated!.total_amount),
+        notes: updated!.notes ?? undefined,
+        internalNotes: updated!.internal_notes ?? undefined,
+      },
+    };
+  },
+);

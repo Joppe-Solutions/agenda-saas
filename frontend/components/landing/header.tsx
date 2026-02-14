@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -16,74 +17,111 @@ const navLinks = [
 
 export function Header() {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
+    <motion.header
+      initial={{ y: -100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+      className="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 pt-4"
+    >
+      <nav
+        className={`flex items-center justify-between w-full max-w-6xl px-4 py-2.5 rounded-2xl transition-all duration-500 ${
+          scrolled
+            ? "bg-background/80 dark:bg-background/80 backdrop-blur-xl border border-border/80 shadow-lg shadow-black/10"
+            : "bg-background/40 dark:bg-background/40 backdrop-blur-md border border-border/40"
+        }`}
+      >
         <Link href="/" className="flex items-center">
           <Logo variant="full" size="sm" />
         </Link>
 
-        <nav className="hidden items-center gap-8 md:flex">
+        <nav className="hidden items-center gap-1 md:flex">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-200 rounded-xl hover:bg-primary/5"
             >
               {link.label}
             </Link>
           ))}
         </nav>
 
-        <div className="hidden items-center gap-3 md:flex">
+        <div className="hidden items-center gap-2 md:flex">
           <ThemeToggle />
-          <Button variant="ghost" asChild>
+          <Button variant="ghost" size="sm" asChild className="rounded-xl px-4">
             <Link href="/sign-in">Entrar</Link>
           </Button>
-          <Button asChild>
+          <Button
+            size="sm"
+            asChild
+            className="rounded-xl px-5 font-medium shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300"
+          >
             <Link href="/sign-up">Começar Grátis</Link>
           </Button>
         </div>
 
         <div className="flex items-center gap-2 md:hidden">
           <ThemeToggle />
-          <Button variant="ghost" size="icon-sm" asChild>
-            <Link href="/sign-in">
-              <span className="text-sm">Entrar</span>
-            </Link>
-          </Button>
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="rounded-lg">
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Menu</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-[280px] sm:w-[320px]">
-              <nav className="mt-8 flex flex-col gap-4">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setOpen(false)}
-                    className="text-lg font-medium text-foreground"
-                  >
-                    {link.label}
+              <div className="flex flex-col h-full">
+                <div className="flex items-center justify-between py-4">
+                  <Link href="/" className="flex items-center" onClick={() => setOpen(false)}>
+                    <Logo variant="full" size="sm" />
                   </Link>
-                ))}
-                <div className="mt-4 flex flex-col gap-2">
-                  <Button asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-lg"
+                    onClick={() => setOpen(false)}
+                  >
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+                <nav className="flex flex-col gap-1 mt-4">
+                  {navLinks.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setOpen(false)}
+                      className="px-4 py-3 text-base font-medium text-foreground hover:bg-primary/5 rounded-xl transition-colors"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </nav>
+                <div className="mt-auto mb-4 flex flex-col gap-2">
+                  <Button variant="ghost" asChild className="justify-start rounded-xl">
+                    <Link href="/sign-in" onClick={() => setOpen(false)}>
+                      Entrar
+                    </Link>
+                  </Button>
+                  <Button asChild className="rounded-xl">
                     <Link href="/sign-up" onClick={() => setOpen(false)}>
                       Começar Grátis
                     </Link>
                   </Button>
                 </div>
-              </nav>
+              </div>
             </SheetContent>
           </Sheet>
         </div>
-      </div>
-    </header>
+      </nav>
+    </motion.header>
   );
 }

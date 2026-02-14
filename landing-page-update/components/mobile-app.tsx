@@ -1,12 +1,10 @@
-"use client";
+"use client"
 
-import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
-import Link from "next/link";
-import { Smartphone, CalendarCheck, Bell, QrCode, Calendar } from "lucide-react";
-import { Logo } from "@/components/ui/logo";
+import { motion, useInView } from "framer-motion"
+import { useRef } from "react"
+import { Smartphone, CalendarCheck, Bell, QrCode } from "lucide-react"
 
-const appFeatures = [
+const features = [
   {
     icon: CalendarCheck,
     title: "Gerencie reservas",
@@ -22,14 +20,14 @@ const appFeatures = [
     title: "Check-in rápido",
     description: "Confirme a presença dos clientes com QR Code.",
   },
-];
+]
 
 export function MobileApp() {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true, margin: "-100px" })
 
   return (
-    <section className="relative py-28 px-4 overflow-hidden" id="app">
+    <section className="relative py-28 px-4 overflow-hidden">
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 
       <div className="max-w-6xl mx-auto">
@@ -40,21 +38,27 @@ export function MobileApp() {
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           className="relative rounded-3xl overflow-hidden"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-background via-secondary/20 to-background" />
-          <div className="absolute inset-0 grid-pattern opacity-30" />
+          {/* Background with gradient */}
+          <div className="absolute inset-0 bg-gradient-to-br from-card via-secondary to-card" />
+          <div className="absolute inset-0 grid-pattern opacity-50" />
+
+          {/* Glow accents */}
+          <div className="absolute -top-32 -right-32 w-[400px] h-[400px] bg-[#0ea5e9]/[0.06] rounded-full blur-[100px] pointer-events-none" />
+          <div className="absolute -bottom-32 -left-32 w-[300px] h-[300px] bg-[#38bdf8]/[0.04] rounded-full blur-[80px] pointer-events-none" />
 
           <div className="relative p-8 md:p-16">
             <div className="flex flex-col md:flex-row items-center gap-12 lg:gap-20">
+              {/* Content */}
               <div className="flex-1">
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: 0.2 }}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 border border-primary/20 mb-8"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0ea5e9]/[0.08] border border-[#0ea5e9]/20 mb-8"
                 >
-                  <Smartphone className="w-4 h-4 text-primary" />
-                  <span className="text-sm text-primary font-medium">Aplicativo Mobile</span>
+                  <Smartphone className="w-4 h-4 text-[#0ea5e9]" />
+                  <span className="text-sm text-[#38bdf8] font-medium">Aplicativo Mobile</span>
                 </motion.div>
 
                 <motion.h2
@@ -63,6 +67,7 @@ export function MobileApp() {
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: 0.3 }}
                   className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-2 tracking-tight leading-tight"
+                  style={{ fontFamily: "var(--font-heading)" }}
                 >
                   Leve o reserva.online
                 </motion.h2>
@@ -71,7 +76,8 @@ export function MobileApp() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: 0.35 }}
-                  className="text-3xl sm:text-4xl lg:text-5xl font-bold text-primary mb-8 tracking-tight"
+                  className="text-3xl sm:text-4xl lg:text-5xl font-bold gradient-text mb-8 tracking-tight"
+                  style={{ fontFamily: "var(--font-heading)" }}
                 >
                   no seu bolso
                 </motion.h2>
@@ -88,7 +94,7 @@ export function MobileApp() {
                 </motion.p>
 
                 <div className="space-y-6 mb-10">
-                  {appFeatures.map((feature, index) => (
+                  {features.map((feature, index) => (
                     <motion.div
                       key={feature.title}
                       initial={{ opacity: 0, x: -20 }}
@@ -97,8 +103,8 @@ export function MobileApp() {
                       transition={{ duration: 0.5, delay: 0.5 + index * 0.1 }}
                       className="flex items-start gap-4"
                     >
-                      <div className="p-2.5 rounded-xl bg-primary/10 shrink-0">
-                        <feature.icon className="w-5 h-5 text-primary" strokeWidth={1.5} />
+                      <div className="p-2.5 rounded-xl bg-[#0ea5e9]/[0.08] shrink-0">
+                        <feature.icon className="w-5 h-5 text-[#0ea5e9]" strokeWidth={1.5} />
                       </div>
                       <div>
                         <h3 className="text-base font-semibold text-foreground mb-1">{feature.title}</h3>
@@ -108,6 +114,7 @@ export function MobileApp() {
                   ))}
                 </div>
 
+                {/* App Store badges */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
@@ -115,7 +122,7 @@ export function MobileApp() {
                   transition={{ duration: 0.6, delay: 0.8 }}
                   className="flex items-center gap-3"
                 >
-                  <Link
+                  <a
                     href="#"
                     className="inline-flex items-center gap-2.5 px-5 py-3 bg-foreground text-background rounded-xl font-medium text-sm hover:opacity-90 transition-opacity"
                   >
@@ -123,8 +130,8 @@ export function MobileApp() {
                       <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
                     </svg>
                     App Store
-                  </Link>
-                  <Link
+                  </a>
+                  <a
                     href="#"
                     className="inline-flex items-center gap-2.5 px-5 py-3 bg-foreground text-background rounded-xl font-medium text-sm hover:opacity-90 transition-opacity"
                   >
@@ -132,10 +139,11 @@ export function MobileApp() {
                       <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 01-.61-.92V2.734a1 1 0 01.609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.199l2.302 2.302a1 1 0 010 1.38l-2.302 2.302L15.065 12l2.633-2.492zM5.864 2.658L16.8 8.99l-2.302 2.302-8.634-8.634z" />
                     </svg>
                     Google Play
-                  </Link>
+                  </a>
                 </motion.div>
               </div>
 
+              {/* Phone mockup */}
               <motion.div
                 initial={{ opacity: 0, y: 40, rotateY: -5 }}
                 whileInView={{ opacity: 1, y: 0, rotateY: 0 }}
@@ -144,31 +152,38 @@ export function MobileApp() {
                 className="flex-shrink-0"
               >
                 <div className="relative">
-                  <div className="absolute -inset-8 bg-primary/10 rounded-full blur-[60px] pointer-events-none" />
+                  {/* Glow behind phone */}
+                  <div className="absolute -inset-8 bg-[#0ea5e9]/[0.08] rounded-full blur-[60px] pointer-events-none" />
 
-                  <div className="relative w-[280px] h-[560px] bg-background rounded-[3rem] border-2 border-border/80 shadow-2xl shadow-black/20 overflow-hidden p-3">
+                  <div className="relative w-[280px] h-[560px] bg-background rounded-[3rem] border-2 border-border/80 shadow-2xl shadow-black/30 overflow-hidden p-3">
+                    {/* Notch */}
                     <div className="absolute top-3 left-1/2 -translate-x-1/2 w-28 h-6 bg-background rounded-full z-20" />
 
-                    <div className="w-full h-full rounded-[2.5rem] bg-gradient-to-b from-background to-secondary overflow-hidden flex flex-col">
+                    <div className="w-full h-full rounded-[2.5rem] bg-gradient-to-b from-card to-secondary overflow-hidden flex flex-col">
+                      {/* Status bar */}
                       <div className="pt-10 px-6 pb-4 text-center">
-                        <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                          <CalendarCheck className="w-7 h-7 text-primary" />
+                        <div className="w-14 h-14 rounded-2xl bg-[#0ea5e9]/10 flex items-center justify-center mx-auto mb-3">
+                          <CalendarCheck className="w-7 h-7 text-[#0ea5e9]" />
                         </div>
-                        <p className="text-foreground font-semibold text-lg">
+                        <p
+                          className="text-foreground font-semibold text-lg"
+                          style={{ fontFamily: "var(--font-heading)" }}
+                        >
                           reserva.online
                         </p>
                         <p className="text-muted-foreground text-sm mt-0.5">5 reservas hoje</p>
                       </div>
 
+                      {/* Reservation cards */}
                       <div className="flex-1 px-4 pb-6 space-y-3 overflow-hidden">
                         {[
                           { name: "Maria Silva", time: "09:00", color: "#22c55e" },
-                          { name: "João Santos", time: "10:30", color: "#00C8FF" },
+                          { name: "João Santos", time: "10:30", color: "#0ea5e9" },
                           { name: "Ana Costa", time: "14:00", color: "#f59e0b" },
                         ].map((item) => (
                           <div
                             key={item.name}
-                            className="flex items-center gap-3 p-3.5 rounded-2xl bg-muted/50 border border-border/30"
+                            className="flex items-center gap-3 p-3.5 rounded-2xl bg-background/60 border border-border/30"
                           >
                             <div
                               className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-semibold text-sm"
@@ -193,5 +208,5 @@ export function MobileApp() {
         </motion.div>
       </div>
     </section>
-  );
+  )
 }
