@@ -29,34 +29,56 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section id="como-funciona" className="py-24">
+    <section id="como-funciona" className="py-16 sm:py-24">
       <div className="container mx-auto max-w-6xl px-4">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
             Como funciona
           </h2>
-          <p className="mt-4 text-lg text-muted-foreground">
+          <p className="mt-3 text-sm text-muted-foreground sm:mt-4 sm:text-base lg:text-lg">
             Em 4 passos simples você está pronto para receber reservas online.
           </p>
         </div>
 
-        <div className="relative mt-16">
-          {/* Connection line */}
-          <div className="absolute left-8 top-0 hidden h-full w-px bg-gradient-to-b from-primary/50 via-primary to-primary/50 lg:left-1/2 lg:block lg:-translate-x-1/2" />
+        {/* Mobile: Stack layout */}
+        <div className="mt-10 space-y-8 sm:mt-16 lg:hidden">
+          {steps.map((step, index) => (
+            <div key={step.step} className="flex gap-4">
+              <div className="flex flex-col items-center">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                  <step.icon className="h-6 w-6 text-primary" />
+                </div>
+                {index < steps.length - 1 && (
+                  <div className="mt-2 h-full w-px bg-gradient-to-b from-primary/50 to-transparent" />
+                )}
+              </div>
+              <div className="pb-8">
+                <span className="text-3xl font-bold text-primary/20">{step.step}</span>
+                <h3 className="mt-1 text-lg font-semibold">{step.title}</h3>
+                <p className="mt-2 text-sm text-muted-foreground">{step.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
 
-          <div className="space-y-12 lg:space-y-16">
+        {/* Desktop: Timeline layout */}
+        <div className="relative mt-16 hidden lg:block">
+          {/* Connection line */}
+          <div className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-gradient-to-b from-primary/50 via-primary to-primary/50" />
+
+          <div className="space-y-16">
             {steps.map((step, index) => (
               <div
                 key={step.step}
-                className={`relative flex flex-col gap-6 lg:flex-row lg:gap-12 ${
-                  index % 2 === 1 ? "lg:flex-row-reverse" : ""
+                className={`relative flex gap-12 ${
+                  index % 2 === 1 ? "flex-row-reverse" : ""
                 }`}
               >
                 {/* Content */}
-                <div className={`flex-1 ${index % 2 === 1 ? "lg:text-right" : ""}`}>
+                <div className={`flex-1 ${index % 2 === 1 ? "text-right" : ""}`}>
                   <div
                     className={`inline-flex items-center gap-4 ${
-                      index % 2 === 1 ? "lg:flex-row-reverse" : ""
+                      index % 2 === 1 ? "flex-row-reverse" : ""
                     }`}
                   >
                     <span className="text-4xl font-bold text-primary/20">{step.step}</span>
@@ -71,10 +93,10 @@ export function HowItWorks() {
                 </div>
 
                 {/* Center dot */}
-                <div className="absolute left-8 top-0 hidden h-4 w-4 -translate-x-1/2 rounded-full border-4 border-background bg-primary lg:left-1/2 lg:block" />
+                <div className="absolute left-1/2 top-0 h-4 w-4 -translate-x-1/2 rounded-full border-4 border-background bg-primary" />
 
                 {/* Empty space for alignment */}
-                <div className="hidden flex-1 lg:block" />
+                <div className="flex-1" />
               </div>
             ))}
           </div>

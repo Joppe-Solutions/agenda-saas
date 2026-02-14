@@ -7,14 +7,14 @@ import { Check } from "lucide-react";
 const plans = [
   {
     name: "Gratuito",
-    description: "Perfeito para começar e testar a plataforma",
+    description: "Perfeito para começar",
     price: "R$ 0",
     period: "/mês",
     features: [
       "Até 20 reservas/mês",
       "1 recurso cadastrado",
-      "Página de reservas personalizada",
-      "Notificações por WhatsApp",
+      "Página de reservas",
+      "Notificações WhatsApp",
       "Suporte por e-mail",
     ],
     cta: "Começar Grátis",
@@ -29,19 +29,19 @@ const plans = [
     features: [
       "Reservas ilimitadas",
       "Até 10 recursos",
-      "Pagamentos via PIX automático",
+      "PIX automático",
       "Relatórios e métricas",
       "Lembretes automáticos",
       "Suporte prioritário",
       "Domínio personalizado",
     ],
-    cta: "Começar Teste Grátis",
+    cta: "Teste Grátis",
     variant: "default" as const,
     popular: true,
   },
   {
     name: "Empresarial",
-    description: "Para operações de grande escala",
+    description: "Para grandes operações",
     price: "R$ 199",
     period: "/mês",
     features: [
@@ -61,18 +61,18 @@ const plans = [
 
 export function Pricing() {
   return (
-    <section id="precos" className="py-24">
+    <section id="precos" className="py-16 sm:py-24">
       <div className="container mx-auto max-w-6xl px-4">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
             Planos que cabem no seu bolso
           </h2>
-          <p className="mt-4 text-lg text-muted-foreground">
-            Comece grátis e escale conforme seu negócio cresce. Sem surpresas, sem taxas escondidas.
+          <p className="mt-3 text-sm text-muted-foreground sm:mt-4 sm:text-base lg:text-lg">
+            Comece grátis e escale conforme seu negócio cresce. Sem surpresas.
           </p>
         </div>
 
-        <div className="mt-12 grid gap-6 lg:grid-cols-3">
+        <div className="mt-10 grid gap-6 sm:mt-12 lg:grid-cols-3">
           {plans.map((plan) => (
             <Card
               key={plan.name}
@@ -83,30 +83,30 @@ export function Pricing() {
               }`}
             >
               {plan.popular && (
-                <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">
+                <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 text-xs">
                   Mais Popular
                 </Badge>
               )}
-              <CardHeader>
-                <CardTitle>{plan.name}</CardTitle>
-                <CardDescription>{plan.description}</CardDescription>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg">{plan.name}</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">{plan.description}</CardDescription>
               </CardHeader>
               <CardContent className="flex-1">
-                <div className="mb-6">
-                  <span className="text-4xl font-bold">{plan.price}</span>
-                  <span className="text-muted-foreground">{plan.period}</span>
+                <div className="mb-4 sm:mb-6">
+                  <span className="text-3xl font-bold sm:text-4xl">{plan.price}</span>
+                  <span className="text-sm text-muted-foreground">{plan.period}</span>
                 </div>
-                <ul className="space-y-3">
+                <ul className="space-y-2 sm:space-y-3">
                   {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-3">
+                    <li key={feature} className="flex items-start gap-2 sm:gap-3">
                       <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                      <span className="text-sm text-muted-foreground">{feature}</span>
+                      <span className="text-xs text-muted-foreground sm:text-sm">{feature}</span>
                     </li>
                   ))}
                 </ul>
               </CardContent>
               <CardFooter>
-                <Button variant={plan.variant} className="w-full" asChild>
+                <Button variant={plan.variant} className="w-full text-sm" asChild>
                   <Link href="/sign-up">{plan.cta}</Link>
                 </Button>
               </CardFooter>
@@ -114,7 +114,7 @@ export function Pricing() {
           ))}
         </div>
 
-        <p className="mt-8 text-center text-sm text-muted-foreground">
+        <p className="mt-6 text-center text-xs text-muted-foreground sm:mt-8 sm:text-sm">
           Todos os planos incluem: SSL grátis, backups diários e atualizações automáticas.
         </p>
       </div>

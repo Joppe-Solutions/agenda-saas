@@ -42,27 +42,27 @@ const useCases = [
 
 export function UseCases() {
   return (
-    <section className="border-t bg-muted/30 py-24">
+    <section className="border-t bg-muted/30 py-16 sm:py-24">
       <div className="container mx-auto max-w-6xl px-4">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
             Para todo tipo de negócio
           </h2>
-          <p className="mt-4 text-lg text-muted-foreground">
+          <p className="mt-3 text-sm text-muted-foreground sm:mt-4 sm:text-base lg:text-lg">
             De barcos de pesca a estúdios de yoga. O reserva.online se adapta ao seu negócio.
           </p>
         </div>
 
-        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-10 grid gap-3 sm:mt-12 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
           {useCases.map((useCase) => (
             <Card key={useCase.title} className="group border-0 bg-card/50 transition-all hover:bg-card hover:shadow-md">
-              <CardContent className="flex items-start gap-4 p-6">
-                <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${useCase.color}`}>
-                  <useCase.icon className="h-6 w-6" />
+              <CardContent className="flex items-start gap-3 p-4 sm:gap-4 sm:p-6">
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl sm:h-12 sm:w-12 ${useCase.color}`}>
+                  <useCase.icon className="h-5 w-5 sm:h-6 sm:w-6" />
                 </div>
                 <div>
-                  <h3 className="font-semibold">{useCase.title}</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">{useCase.description}</p>
+                  <h3 className="text-sm font-semibold sm:text-base">{useCase.title}</h3>
+                  <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{useCase.description}</p>
                 </div>
               </CardContent>
             </Card>

@@ -51,28 +51,28 @@ const features = [
 
 export function Features() {
   return (
-    <section id="recursos" className="border-t bg-muted/30 py-24">
+    <section id="recursos" className="border-t bg-muted/30 py-16 sm:py-24">
       <div className="container mx-auto max-w-6xl px-4">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
             Tudo que você precisa para gerenciar reservas
           </h2>
-          <p className="mt-4 text-lg text-muted-foreground">
+          <p className="mt-3 text-sm text-muted-foreground sm:mt-4 sm:text-base lg:text-lg">
             Ferramentas poderosas e fáceis de usar para transformar a forma como você recebe e gerencia suas reservas.
           </p>
         </div>
 
-        <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-10 grid gap-4 sm:mt-16 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
           {features.map((feature) => (
             <Card key={feature.title} className="border-0 bg-card/50 shadow-sm transition-all hover:shadow-md">
-              <CardHeader>
-                <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                  <feature.icon className="h-5 w-5 text-primary" />
+              <CardHeader className="pb-2 sm:pb-4">
+                <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 sm:h-10 sm:w-10">
+                  <feature.icon className="h-4 w-4 text-primary sm:h-5 sm:w-5" />
                 </div>
-                <CardTitle className="text-lg">{feature.title}</CardTitle>
+                <CardTitle className="text-base sm:text-lg">{feature.title}</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-sm leading-relaxed">
+                <CardDescription className="text-xs leading-relaxed sm:text-sm">
                   {feature.description}
                 </CardDescription>
               </CardContent>

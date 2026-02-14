@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Inter } from "next/font/google";
+import { TawkTo } from "@/components/tawk-to";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -20,7 +21,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <ClerkProvider>
       <html lang="pt-BR">
-        <body className={inter.className}>{children}</body>
+        <body className={inter.className}>
+          {children}
+          <TawkTo />
+        </body>
       </html>
     </ClerkProvider>
   );
