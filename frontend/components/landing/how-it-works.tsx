@@ -1,3 +1,7 @@
+"use client";
+
+import { motion, useInView } from "framer-motion";
+import { useRef } from "react";
 import { UserPlus, Settings, Share2, Banknote } from "lucide-react";
 
 const steps = [
@@ -28,22 +32,36 @@ const steps = [
 ];
 
 export function HowItWorks() {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+
   return (
     <section id="como-funciona" className="py-16 sm:py-24">
       <div className="container mx-auto max-w-6xl px-4">
-        <div className="mx-auto max-w-2xl text-center">
+        <motion.div
+          ref={ref}
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6 }}
+          className="mx-auto max-w-2xl text-center"
+        >
           <h2 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
             Como funciona
           </h2>
           <p className="mt-3 text-sm text-muted-foreground sm:mt-4 sm:text-base lg:text-lg">
             Em 4 passos simples você está pronto para receber reservas online.
           </p>
-        </div>
+        </motion.div>
 
-        {/* Mobile: Stack layout */}
         <div className="mt-10 space-y-8 sm:mt-16 lg:hidden">
           {steps.map((step, index) => (
-            <div key={step.step} className="flex gap-4">
+            <motion.div
+              key={step.step}
+              initial={{ opacity: 0, x: -20 }}
+              animate={isInView ? { opacity: 1, x: 0 } : {}}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              className="flex gap-4"
+            >
               <div className="flex flex-col items-center">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
                   <step.icon className="h-6 w-6 text-primary" />
@@ -57,24 +75,24 @@ export function HowItWorks() {
                 <h3 className="mt-1 text-lg font-semibold">{step.title}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">{step.description}</p>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
 
-        {/* Desktop: Timeline layout */}
         <div className="relative mt-16 hidden lg:block">
-          {/* Connection line */}
           <div className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-gradient-to-b from-primary/50 via-primary to-primary/50" />
 
           <div className="space-y-16">
             {steps.map((step, index) => (
-              <div
+              <motion.div
                 key={step.step}
+                initial={{ opacity: 0, y: 20 }}
+                animate={isInView ? { opacity: 1, y: 0 } : {}}
+                transition={{ duration: 0.5, delay: index * 0.15 }}
                 className={`relative flex gap-12 ${
                   index % 2 === 1 ? "flex-row-reverse" : ""
                 }`}
               >
-                {/* Content */}
                 <div className={`flex-1 ${index % 2 === 1 ? "text-right" : ""}`}>
                   <div
                     className={`inline-flex items-center gap-4 ${
@@ -92,12 +110,10 @@ export function HowItWorks() {
                   </p>
                 </div>
 
-                {/* Center dot */}
                 <div className="absolute left-1/2 top-0 h-4 w-4 -translate-x-1/2 rounded-full border-4 border-background bg-primary" />
 
-                {/* Empty space for alignment */}
                 <div className="flex-1" />
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>

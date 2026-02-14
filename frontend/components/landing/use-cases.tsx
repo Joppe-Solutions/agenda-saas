@@ -1,3 +1,7 @@
+"use client";
+
+import { motion, useInView } from "framer-motion";
+import { useRef } from "react";
 import { Ship, Dumbbell, Camera, Briefcase, Home, Car } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -41,31 +45,47 @@ const useCases = [
 ];
 
 export function UseCases() {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+
   return (
     <section className="border-t bg-muted/30 py-16 sm:py-24">
       <div className="container mx-auto max-w-6xl px-4">
-        <div className="mx-auto max-w-2xl text-center">
+        <motion.div
+          ref={ref}
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6 }}
+          className="mx-auto max-w-2xl text-center"
+        >
           <h2 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
             Para todo tipo de negócio
           </h2>
           <p className="mt-3 text-sm text-muted-foreground sm:mt-4 sm:text-base lg:text-lg">
             De barcos de pesca a estúdios de yoga. O reserva.online se adapta ao seu negócio.
           </p>
-        </div>
+        </motion.div>
 
         <div className="mt-10 grid gap-3 sm:mt-12 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-          {useCases.map((useCase) => (
-            <Card key={useCase.title} className="group border-0 bg-card/50 transition-all hover:bg-card hover:shadow-md">
-              <CardContent className="flex items-start gap-3 p-4 sm:gap-4 sm:p-6">
-                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl sm:h-12 sm:w-12 ${useCase.color}`}>
-                  <useCase.icon className="h-5 w-5 sm:h-6 sm:w-6" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold sm:text-base">{useCase.title}</h3>
-                  <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{useCase.description}</p>
-                </div>
-              </CardContent>
-            </Card>
+          {useCases.map((useCase, index) => (
+            <motion.div
+              key={useCase.title}
+              initial={{ opacity: 0, y: 20 }}
+              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.5, delay: index * 0.05 }}
+            >
+              <Card className="group border-0 bg-card/50 transition-all hover:bg-card hover:shadow-md hover:border-primary/20">
+                <CardContent className="flex items-start gap-3 p-4 sm:gap-4 sm:p-6">
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl sm:h-12 sm:w-12 ${useCase.color}`}>
+                    <useCase.icon className="h-5 w-5 sm:h-6 sm:w-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold sm:text-base">{useCase.title}</h3>
+                    <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{useCase.description}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
           ))}
         </div>
       </div>

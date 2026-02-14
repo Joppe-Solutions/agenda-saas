@@ -15,8 +15,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { createBooking, listMerchantAssets } from "@/lib/api";
-import type { Asset } from "@/lib/types";
+import { createBooking, listMerchantResources } from "@/lib/api";
+import type { Resource } from "@/lib/types";
 import { useEffect } from "react";
 
 interface NewBookingPageProps {
@@ -26,11 +26,11 @@ interface NewBookingPageProps {
 export function NewBookingPage({ merchantId }: NewBookingPageProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [assets, setAssets] = useState<Asset[]>([]);
-  const [assetsLoading, setAssetsLoading] = useState(true);
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [resourcesLoading, setResourcesLoading] = useState(true);
 
   const [formData, setFormData] = useState({
-    assetId: "",
+    resourceId: "",
     customerName: "",
     customerPhone: "",
     customerEmail: "",
@@ -42,35 +42,35 @@ export function NewBookingPage({ merchantId }: NewBookingPageProps) {
   });
 
   useEffect(() => {
-    const fetchAssets = async () => {
+    const fetchResources = async () => {
       try {
-        const data = await listMerchantAssets(merchantId);
-        setAssets(data.assets.filter((a) => a.active));
+        const data = await listMerchantResources(merchantId);
+        setResources(data.resources.filter((r) => r.active));
       } catch (err) {
         console.error(err);
       } finally {
-        setAssetsLoading(false);
+        setResourcesLoading(false);
       }
     };
-    fetchAssets();
+    fetchResources();
   }, [merchantId]);
 
-  const selectedAsset = assets.find((a) => a.id === formData.assetId);
+  const selectedResource = resources.find((r) => r.id === formData.resourceId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.assetId) return;
+    if (!formData.resourceId) return;
 
     setLoading(true);
     try {
       await createBooking({
-        assetId: formData.assetId,
+        resourceId: formData.resourceId,
         merchantId,
         customerName: formData.customerName,
         customerPhone: formData.customerPhone,
         customerEmail: formData.customerEmail || undefined,
         bookingDate: formData.bookingDate,
-        startTime: selectedAsset?.pricingType === "HOURLY" ? formData.startTime : undefined,
+        startTime: selectedResource?.pricingType === "HOURLY" ? formData.startTime : undefined,
         peopleCount: formData.peopleCount,
       });
       router.push("/dashboard/bookings");
@@ -91,7 +91,7 @@ export function NewBookingPage({ merchantId }: NewBookingPageProps) {
     return slots;
   };
 
-  if (assetsLoading) {
+  if (resourcesLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -119,29 +119,29 @@ export function NewBookingPage({ merchantId }: NewBookingPageProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="assetId">Recurso *</Label>
+              <Label htmlFor="resourceId">Recurso *</Label>
               <Select
-                value={formData.assetId}
-                onValueChange={(value) => setFormData({ ...formData, assetId: value })}
+                value={formData.resourceId}
+                onValueChange={(value) => setFormData({ ...formData, resourceId: value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione um recurso" />
                 </SelectTrigger>
                 <SelectContent>
-                  {assets.map((asset) => (
-                    <SelectItem key={asset.id} value={asset.id}>
-                      {asset.name} - R$ {asset.basePrice.toFixed(2)}
-                      {asset.pricingType === "HOURLY" && "/hora"}
+                  {resources.map((resource) => (
+                    <SelectItem key={resource.id} value={resource.id}>
+                      {resource.name} - R$ {resource.basePrice.toFixed(2)}
+                      {resource.pricingType === "HOURLY" && "/hora"}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {selectedAsset && (
+            {selectedResource && (
               <div className="rounded-lg bg-muted p-3 text-sm">
-                <p><strong>Capacidade:</strong> {selectedAsset.capacity} pessoas</p>
-                <p><strong>Sinal (30%):</strong> R$ {(selectedAsset.basePrice * 0.3).toFixed(2)}</p>
+                <p><strong>Capacidade:</strong> {selectedResource.capacity} pessoas</p>
+                <p><strong>Sinal (30%):</strong> R$ {(selectedResource.basePrice * 0.3).toFixed(2)}</p>
               </div>
             )}
 
@@ -158,7 +158,7 @@ export function NewBookingPage({ merchantId }: NewBookingPageProps) {
                 />
               </div>
 
-              {selectedAsset?.pricingType === "HOURLY" && (
+              {selectedResource?.pricingType === "HOURLY" && (
                 <div className="space-y-2">
                   <Label htmlFor="startTime">Horário *</Label>
                   <Select
@@ -185,7 +185,7 @@ export function NewBookingPage({ merchantId }: NewBookingPageProps) {
                   id="peopleCount"
                   type="number"
                   min={1}
-                  max={selectedAsset?.capacity ?? 100}
+                  max={selectedResource?.capacity ?? 100}
                   value={formData.peopleCount}
                   onChange={(e) => setFormData({ ...formData, peopleCount: parseInt(e.target.value) || 1 })}
                   required
@@ -245,7 +245,7 @@ export function NewBookingPage({ merchantId }: NewBookingPageProps) {
           <Button type="button" variant="outline" onClick={() => router.back()}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={loading || !formData.assetId || !formData.customerName || !formData.customerPhone || !formData.bookingDate}>
+          <Button type="submit" disabled={loading || !formData.resourceId || !formData.customerName || !formData.customerPhone || !formData.bookingDate}>
             {loading ? (
               <>
                 <RefreshCw className="mr-2 h-4 w-4 animate-spin" />

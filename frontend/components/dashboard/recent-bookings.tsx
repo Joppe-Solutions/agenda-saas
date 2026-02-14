@@ -8,17 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import { Booking } from "@/lib/types";
+import { Booking, BOOKING_STATUS_LABELS, BOOKING_STATUS_COLORS } from "@/lib/types";
 
 interface RecentBookingsProps {
   bookings: Booking[];
 }
-
-const statusMap = {
-  PENDING_PAYMENT: { label: "Aguardando", variant: "outline" as const },
-  CONFIRMED: { label: "Confirmado", variant: "default" as const },
-  CANCELLED: { label: "Cancelado", variant: "destructive" as const },
-};
 
 export function RecentBookings({ bookings }: RecentBookingsProps) {
   const recentBookings = bookings.slice(0, 5);
@@ -68,15 +62,17 @@ export function RecentBookings({ bookings }: RecentBookingsProps) {
                 <div className="flex items-center gap-4">
                   <div className="text-right">
                     <p className="font-medium">R$ {booking.depositAmount.toFixed(2)}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(booking.createdAt), {
-                        addSuffix: true,
-                        locale: ptBR,
-                      })}
-                    </p>
+                    {booking.createdAt && (
+                      <p className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(booking.createdAt), {
+                          addSuffix: true,
+                          locale: ptBR,
+                        })}
+                      </p>
+                    )}
                   </div>
-                  <Badge variant={statusMap[booking.status].variant}>
-                    {statusMap[booking.status].label}
+                  <Badge className={BOOKING_STATUS_COLORS[booking.status]}>
+                    {BOOKING_STATUS_LABELS[booking.status]}
                   </Badge>
                 </div>
               </div>

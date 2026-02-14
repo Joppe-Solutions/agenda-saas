@@ -2,7 +2,7 @@ import type {
   Resource, Booking, CreateBookingInput, Merchant, CreateResourceInput, 
   UpdateResourceInput, UpsertMerchantInput, Payment, TimeSlot, AvailabilityRule,
   CreateAvailabilityRuleInput, Block, CreateBlockInput, ResourceTemplate,
-  DashboardStats, BookingStatus, Customer
+  DashboardStats, BookingStatus, Customer, CustomerTag
 } from "@/lib/types";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_ENCORE_API_URL ?? "http://localhost:4000";
@@ -251,6 +251,7 @@ export async function getCustomerHistory(customerId: string) {
       totalSpent: number;
       noShowCount: number;
     };
+    tags: CustomerTag[];
     bookings: Booking[];
   }>(`/customer/${customerId}/history`);
 }
@@ -262,6 +263,35 @@ export async function rescheduleBooking(
   return request<{ booking: Booking }>(`/booking/${bookingId}/reschedule`, {
     method: "POST",
     body: JSON.stringify(data),
+  });
+}
+
+export async function listCustomerTags(merchantId: string) {
+  return request<{ tags: CustomerTag[] }>(`/merchant/${merchantId}/customer-tags`);
+}
+
+export async function createCustomerTag(merchantId: string, name: string, color?: string) {
+  return request<{ tag: CustomerTag }>("/customer-tag", {
+    method: "POST",
+    body: JSON.stringify({ merchantId, name, color }),
+  });
+}
+
+export async function deleteCustomerTag(tagId: string) {
+  return request<{ ok: boolean }>(`/customer-tag/${tagId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function assignTagToCustomer(customerId: string, tagId: string) {
+  return request<{ ok: boolean }>(`/customer/${customerId}/tag/${tagId}`, {
+    method: "POST",
+  });
+}
+
+export async function removeTagFromCustomer(customerId: string, tagId: string) {
+  return request<{ ok: boolean }>(`/customer/${customerId}/tag/${tagId}`, {
+    method: "DELETE",
   });
 }
 

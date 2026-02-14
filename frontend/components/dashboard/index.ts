@@ -8,5 +8,6 @@ export { PaymentsPage } from "./payments-page";
 export { ReportsPage } from "./reports-page";
 export { NewBookingPage } from "./new-booking-page";
 export { BookingCalendar } from "./booking-calendar";
+export { CustomersPage } from "./customers-page";
 
 export { ResourcesPage as AssetsPage } from "./resources-page";
