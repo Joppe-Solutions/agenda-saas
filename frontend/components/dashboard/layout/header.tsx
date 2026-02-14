@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
 import { Bell, Menu, Search, Plus } from "lucide-react";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,8 +16,12 @@ import {
 import { MobileNav } from "./mobile-nav";
 import { Logo } from "@/components/ui/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { userButtonTheme, userButtonThemeDark } from "@/lib/clerk-theme";
 
 export function DashboardHeader() {
+  const { resolvedTheme } = useTheme();
+  const theme = resolvedTheme === "dark" ? userButtonThemeDark : userButtonTheme;
+
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-card px-4 lg:px-6">
       <Sheet>
@@ -67,9 +72,8 @@ export function DashboardHeader() {
 
         <UserButton
           appearance={{
-            elements: {
-              avatarBox: "h-9 w-9",
-            },
+            elements: theme.elements,
+            variables: theme.variables,
           }}
         />
       </div>

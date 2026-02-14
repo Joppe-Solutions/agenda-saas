@@ -12,7 +12,8 @@ const features = [
 export function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
-      <div className="relative hidden bg-gradient-to-br from-navy-900 via-navy-800 to-navy-950 lg:block">
+      <div className="relative hidden lg:block">
+        <div className="absolute inset-0 gradient-hero" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-cyan-500/20 via-transparent to-transparent" />
         <div className="relative flex h-full flex-col justify-between p-12 text-white">
           <Link href="/" className="flex items-center">
@@ -35,8 +36,8 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
             <ul className="space-y-4">
               {features.map((feature) => (
                 <li key={feature} className="flex items-center gap-3">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-500/20">
-                    <CheckCircle2 className="h-4 w-4 text-cyan-400" />
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-yellow-500/20">
+                    <CheckCircle2 className="h-4 w-4 text-yellow-400" />
                   </div>
                   <span className="text-white/80">{feature}</span>
                 </li>

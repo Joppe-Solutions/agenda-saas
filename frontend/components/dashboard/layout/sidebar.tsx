@@ -77,14 +77,14 @@ export function Sidebar() {
         </nav>
 
         <div className="border-t p-4">
-          <div className="rounded-xl bg-gradient-to-br from-primary to-primary/80 p-4 text-primary-foreground">
+          <div className="rounded-xl bg-gradient-to-br from-blue-900 to-blue-950 p-4 text-white">
             <p className="text-sm font-semibold">Plano Gratuito</p>
             <p className="mt-1 text-xs opacity-80">
               5 de 20 reservas usadas
             </p>
             <Link
               href="/dashboard/upgrade"
-              className="mt-3 block text-xs font-medium underline-offset-2 hover:underline"
+              className="mt-3 inline-block text-xs font-semibold text-yellow-400 hover:text-yellow-300"
             >
               Fazer upgrade
             </Link>

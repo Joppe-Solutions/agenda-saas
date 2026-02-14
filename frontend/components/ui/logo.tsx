@@ -13,9 +13,9 @@ interface LogoProps {
 }
 
 const sizes = {
-  sm: { icon: 20, full: 28 },
-  md: { icon: 24, full: 32 },
-  lg: { icon: 32, full: 40 },
+  sm: { icon: 24, full: 36 },
+  md: { icon: 32, full: 44 },
+  lg: { icon: 40, full: 52 },
 };
 
 export function Logo({ variant = "full", size = "md", className, forceTheme }: LogoProps) {
@@ -50,7 +50,7 @@ export function Logo({ variant = "full", size = "md", className, forceTheme }: L
   }
 
   return (
-    <div className={cn("relative", className)} style={{ width: height * 3.5, height }}>
+    <div className={cn("relative", className)} style={{ width: height * 4, height }}>
       <Image
         src={logoSrc}
         alt="reserva.online"

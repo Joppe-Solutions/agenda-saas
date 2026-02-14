@@ -16,7 +16,7 @@ export function Hero() {
 
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">
             Reservas online
-            <span className="block bg-gradient-to-r from-primary to-cyan-500 bg-clip-text text-transparent">
+            <span className="block bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
               simples e profissionais
             </span>
           </h1>
@@ -67,7 +67,7 @@ export function Hero() {
               />
             </div>
           </div>
-          <div className="absolute -inset-4 -z-10 bg-gradient-to-r from-primary/20 via-cyan-400/20 to-primary/20 opacity-50 blur-3xl" />
+          <div className="absolute -inset-4 -z-10 bg-gradient-to-r from-blue-500/20 via-cyan-400/20 to-yellow-400/20 opacity-50 blur-3xl" />
         </div>
       </div>
     </section>
