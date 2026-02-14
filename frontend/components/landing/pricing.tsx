@@ -1,0 +1,123 @@
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Check } from "lucide-react";
+
+const plans = [
+  {
+    name: "Gratuito",
+    description: "Perfeito para começar e testar a plataforma",
+    price: "R$ 0",
+    period: "/mês",
+    features: [
+      "Até 20 reservas/mês",
+      "1 recurso cadastrado",
+      "Página de reservas personalizada",
+      "Notificações por WhatsApp",
+      "Suporte por e-mail",
+    ],
+    cta: "Começar Grátis",
+    variant: "outline" as const,
+    popular: false,
+  },
+  {
+    name: "Profissional",
+    description: "Para negócios em crescimento",
+    price: "R$ 79",
+    period: "/mês",
+    features: [
+      "Reservas ilimitadas",
+      "Até 10 recursos",
+      "Pagamentos via PIX automático",
+      "Relatórios e métricas",
+      "Lembretes automáticos",
+      "Suporte prioritário",
+      "Domínio personalizado",
+    ],
+    cta: "Começar Teste Grátis",
+    variant: "default" as const,
+    popular: true,
+  },
+  {
+    name: "Empresarial",
+    description: "Para operações de grande escala",
+    price: "R$ 199",
+    period: "/mês",
+    features: [
+      "Tudo do Profissional",
+      "Recursos ilimitados",
+      "Múltiplos usuários",
+      "API de integração",
+      "Relatórios avançados",
+      "Suporte dedicado",
+      "Treinamento incluso",
+    ],
+    cta: "Falar com Vendas",
+    variant: "outline" as const,
+    popular: false,
+  },
+];
+
+export function Pricing() {
+  return (
+    <section id="precos" className="py-24">
+      <div className="container mx-auto max-w-6xl px-4">
+        <div className="mx-auto max-w-2xl text-center">
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            Planos que cabem no seu bolso
+          </h2>
+          <p className="mt-4 text-lg text-muted-foreground">
+            Comece grátis e escale conforme seu negócio cresce. Sem surpresas, sem taxas escondidas.
+          </p>
+        </div>
+
+        <div className="mt-12 grid gap-6 lg:grid-cols-3">
+          {plans.map((plan) => (
+            <Card
+              key={plan.name}
+              className={`relative flex flex-col ${
+                plan.popular
+                  ? "border-primary shadow-lg shadow-primary/10"
+                  : "border-border/50"
+              }`}
+            >
+              {plan.popular && (
+                <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  Mais Popular
+                </Badge>
+              )}
+              <CardHeader>
+                <CardTitle>{plan.name}</CardTitle>
+                <CardDescription>{plan.description}</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1">
+                <div className="mb-6">
+                  <span className="text-4xl font-bold">{plan.price}</span>
+                  <span className="text-muted-foreground">{plan.period}</span>
+                </div>
+                <ul className="space-y-3">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-start gap-3">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                      <span className="text-sm text-muted-foreground">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+              <CardFooter>
+                <Button variant={plan.variant} className="w-full" asChild>
+                  <Link href="/sign-up">{plan.cta}</Link>
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+
+        <p className="mt-8 text-center text-sm text-muted-foreground">
+          Todos os planos incluem: SSL grátis, backups diários e atualizações automáticas.
+        </p>
+      </div>
+    </section>
+  );
+}

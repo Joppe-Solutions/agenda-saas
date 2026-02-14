@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { Card } from "@/components/ui/card";
-import { getDashboardSummary } from "@/lib/api";
+import { CalendarDays, DollarSign, Users, TrendingUp } from "lucide-react";
+import { StatsCard, RecentBookings, QuickActions } from "@/components/dashboard";
+import { getDashboardSummary, listMerchantBookings } from "@/lib/api";
 
 export default async function DashboardPage() {
   const { userId } = await auth();
@@ -10,24 +10,63 @@ export default async function DashboardPage() {
     redirect("/sign-in?redirect_url=/dashboard");
   }
 
-  const summary = await getDashboardSummary(userId);
+  const [summary, { bookings }] = await Promise.all([
+    getDashboardSummary(userId),
+    listMerchantBookings(userId),
+  ]);
+
+  // Calculate additional stats
+  const confirmedBookings = bookings.filter((b) => b.status === "CONFIRMED").length;
+  const pendingBookings = bookings.filter((b) => b.status === "PENDING_PAYMENT").length;
 
   return (
-    <section className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <p className="text-sm text-slate-500">Reservas de hoje</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">{summary.bookingsToday}</p>
-        </Card>
-        <Card>
-          <p className="text-sm text-slate-500">Faturamento do mes (sinal)</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">R$ {summary.monthRevenue.toFixed(2)}</p>
-        </Card>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Visão Geral</h1>
+        <p className="text-muted-foreground">
+          Acompanhe suas reservas e métricas do negócio
+        </p>
       </div>
 
-      <Link className="text-sm font-semibold text-brand-700 underline" href="/dashboard/bookings">
-        Ver todas as reservas
-      </Link>
-    </section>
+      {/* Stats Grid */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatsCard
+          title="Reservas Hoje"
+          value={summary.bookingsToday.toString()}
+          icon={CalendarDays}
+          description="reservas agendadas"
+        />
+        <StatsCard
+          title="Faturamento do Mês"
+          value={`R$ ${summary.monthRevenue.toFixed(2)}`}
+          icon={DollarSign}
+          description="em sinais recebidos"
+          trend={{ value: 12, isPositive: true }}
+        />
+        <StatsCard
+          title="Confirmadas"
+          value={confirmedBookings.toString()}
+          icon={TrendingUp}
+          description="reservas confirmadas"
+        />
+        <StatsCard
+          title="Aguardando"
+          value={pendingBookings.toString()}
+          icon={Users}
+          description="aguardando pagamento"
+        />
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <RecentBookings bookings={bookings} />
+        </div>
+        <div>
+          <QuickActions />
+        </div>
+      </div>
+    </div>
   );
 }

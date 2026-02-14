@@ -23,14 +23,15 @@ export interface Asset {
 
 export interface Booking {
   id: string;
-  asset_id: string;
-  customer_name: string;
-  customer_phone: string;
-  booking_date: string;
-  people_count: number;
+  assetId: string;
+  customerName: string;
+  customerPhone: string;
+  bookingDate: string;
+  peopleCount: number;
   status: BookingStatus;
-  deposit_amount: number;
-  payment_id: string | null;
+  depositAmount: number;
+  paymentId: string | null;
+  createdAt: string;
 }
 
 export interface CreateBookingInput {
