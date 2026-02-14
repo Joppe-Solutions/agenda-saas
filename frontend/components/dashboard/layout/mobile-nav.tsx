@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, CalendarDays, Ship, Settings, HelpCircle, CreditCard } from "lucide-react";
+import { LayoutDashboard, CalendarDays, Ship, Settings, HelpCircle, CreditCard, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigation = [
@@ -10,6 +10,7 @@ const navigation = [
   { name: "Reservas", href: "/dashboard/bookings", icon: CalendarDays },
   { name: "Recursos", href: "/dashboard/assets", icon: Ship },
   { name: "Pagamentos", href: "/dashboard/payments", icon: CreditCard },
+  { name: "Relatórios", href: "/dashboard/reports", icon: BarChart3 },
   { name: "Configurações", href: "/dashboard/settings", icon: Settings },
   { name: "Ajuda", href: "/dashboard/help", icon: HelpCircle },
 ];
@@ -27,10 +28,10 @@ export function MobileNav() {
             key={item.name}
             href={item.href}
             className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+              "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-base",
               isActive
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
             )}
           >
             <item.icon className="h-5 w-5" />

@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { CalendarCheck, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
 
 const navLinks = [
   { href: "#recursos", label: "Recursos" },
@@ -17,16 +18,12 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:h-16">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary sm:h-8 sm:w-8">
-            <CalendarCheck className="h-4 w-4 text-primary-foreground sm:h-5 sm:w-5" />
-          </div>
-          <span className="text-lg font-bold sm:text-xl">reserva.online</span>
+      <div className="container mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
+        <Link href="/" className="flex items-center">
+          <Logo variant="full" size="sm" />
         </Link>
 
-        {/* Desktop nav */}
-        <nav className="hidden items-center gap-6 md:flex">
+        <nav className="hidden items-center gap-8 md:flex">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -38,24 +35,24 @@ export function Header() {
           ))}
         </nav>
 
-        {/* Desktop buttons */}
-        <div className="hidden items-center gap-2 sm:gap-3 md:flex">
-          <Button variant="ghost" size="sm" asChild>
+        <div className="hidden items-center gap-3 md:flex">
+          <Button variant="ghost" asChild>
             <Link href="/sign-in">Entrar</Link>
           </Button>
-          <Button size="sm" asChild>
+          <Button asChild>
             <Link href="/sign-up">Começar Grátis</Link>
           </Button>
         </div>
 
-        {/* Mobile menu */}
         <div className="flex items-center gap-2 md:hidden">
-          <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" asChild>
-            <Link href="/sign-in">Entrar</Link>
+          <Button variant="ghost" size="icon-sm" asChild>
+            <Link href="/sign-in">
+              <span className="text-sm">Entrar</span>
+            </Link>
           </Button>
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Button variant="ghost" size="icon">
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Menu</span>
               </Button>
