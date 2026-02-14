@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CheckCircle2, AlertCircle, Copy, MessageCircle, Loader2 } from "lucide-react";
+import { CheckCircle2, AlertCircle, Copy, MessageCircle, Loader2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
-import { checkAvailability, createBooking } from "@/lib/api";
+import { checkAvailability, checkTimeSlotAvailability, createBooking } from "@/lib/api";
 import type { Asset } from "@/lib/types";
 
 interface BookingFormProps {
@@ -26,9 +26,11 @@ interface BookingFormProps {
 export function BookingForm({ merchantId, merchantName, merchantWhatsapp, assets }: BookingFormProps) {
   const [assetId, setAssetId] = useState(assets[0]?.id ?? "");
   const [bookingDate, setBookingDate] = useState("");
+  const [startTime, setStartTime] = useState("");
   const [peopleCount, setPeopleCount] = useState(1);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
   const [availability, setAvailability] = useState<"unknown" | "available" | "unavailable">("unknown");
   const [loading, setLoading] = useState(false);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
@@ -41,14 +43,30 @@ export function BookingForm({ merchantId, merchantName, merchantWhatsapp, assets
   }>(null);
 
   const selectedAsset = useMemo(() => assets.find((item) => item.id === assetId), [assetId, assets]);
+  const isHourly = selectedAsset?.pricingType === "HOURLY";
+
+  const timeSlots = useMemo(() => {
+    const slots = [];
+    for (let h = 6; h <= 22; h++) {
+      slots.push(`${String(h).padStart(2, "0")}:00`);
+      if (h < 22) slots.push(`${String(h).padStart(2, "0")}:30`);
+    }
+    return slots;
+  }, []);
 
   async function handleAvailabilityCheck() {
     if (!assetId || !bookingDate) return;
+    if (isHourly && !startTime) return;
 
     setError("");
     setCheckingAvailability(true);
     try {
-      const result = await checkAvailability(assetId, bookingDate);
+      let result;
+      if (isHourly && startTime) {
+        result = await checkTimeSlotAvailability(assetId, bookingDate, startTime);
+      } else {
+        result = await checkAvailability(assetId, bookingDate);
+      }
       setAvailability(result.available ? "available" : "unavailable");
     } catch {
       setAvailability("unknown");
@@ -69,7 +87,9 @@ export function BookingForm({ merchantId, merchantName, merchantWhatsapp, assets
         merchantId,
         customerName,
         customerPhone,
+        customerEmail: customerEmail || undefined,
         bookingDate,
+        startTime: isHourly ? startTime : undefined,
         peopleCount,
       });
 
@@ -92,8 +112,12 @@ export function BookingForm({ merchantId, merchantName, merchantWhatsapp, assets
     setTimeout(() => setCopied(false), 2000);
   }
 
+  const bookingTimeText = isHourly && startTime
+    ? `\n⏰ Horário: ${startTime}`
+    : "";
+
   const whatsappText = paymentInfo
-    ? `Olá! Acabei de fazer uma reserva:\n\n📅 Data: ${new Date(bookingDate).toLocaleDateString("pt-BR")}\n👥 Pessoas: ${peopleCount}\n💰 Sinal: R$ ${paymentInfo.depositAmount.toFixed(2)}\n\nReserva #${paymentInfo.bookingId.slice(0, 8)}`
+    ? `Olá! Acabei de fazer uma reserva:\n\n📅 Data: ${new Date(bookingDate + "T12:00:00").toLocaleDateString("pt-BR")}${bookingTimeText}\n👥 Pessoas: ${peopleCount}\n💰 Sinal: R$ ${paymentInfo.depositAmount.toFixed(2)}\n\nReserva #${paymentInfo.bookingId.slice(0, 8)}`
     : "";
 
   if (!assets.length) {
@@ -174,6 +198,7 @@ export function BookingForm({ merchantId, merchantName, merchantWhatsapp, assets
           onValueChange={(value) => {
             setAssetId(value);
             setAvailability("unknown");
+            setStartTime("");
           }}
         >
           <SelectTrigger id="asset">
@@ -183,6 +208,7 @@ export function BookingForm({ merchantId, merchantName, merchantWhatsapp, assets
             {assets.map((asset) => (
               <SelectItem key={asset.id} value={asset.id}>
                 {asset.name} - {asset.capacity} pessoas - R$ {asset.basePrice.toFixed(2)}
+                {asset.pricingType === "HOURLY" ? "/hora" : ""}
               </SelectItem>
             ))}
           </SelectContent>
@@ -211,6 +237,45 @@ export function BookingForm({ merchantId, merchantName, merchantWhatsapp, assets
           </div>
         </div>
 
+        {isHourly ? (
+          <div className="space-y-2">
+            <Label htmlFor="time">Horário</Label>
+            <Select
+              value={startTime}
+              onValueChange={(value) => {
+                setStartTime(value);
+                setAvailability("unknown");
+              }}
+            >
+              <SelectTrigger id="time">
+                <SelectValue placeholder="Selecione o horário" />
+              </SelectTrigger>
+              <SelectContent>
+                {timeSlots.map((slot) => (
+                  <SelectItem key={slot} value={slot}>
+                    {slot}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Label htmlFor="people">Pessoas</Label>
+            <Input
+              id="people"
+              type="number"
+              min={1}
+              max={selectedAsset?.capacity ?? 100}
+              value={peopleCount}
+              onChange={(event) => setPeopleCount(Number(event.target.value))}
+              required
+            />
+          </div>
+        )}
+      </div>
+
+      {isHourly && (
         <div className="space-y-2">
           <Label htmlFor="people">Pessoas</Label>
           <Input
@@ -223,19 +288,19 @@ export function BookingForm({ merchantId, merchantName, merchantWhatsapp, assets
             required
           />
         </div>
-      </div>
+      )}
 
       {availability === "available" && (
         <div className="flex items-center gap-2 rounded-lg bg-green-50 p-3 text-sm text-green-700">
           <CheckCircle2 className="h-4 w-4" />
-          Data disponível para reserva
+          {isHourly ? "Horário disponível para reserva" : "Data disponível para reserva"}
         </div>
       )}
 
       {availability === "unavailable" && (
         <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-700">
           <AlertCircle className="h-4 w-4" />
-          Data indisponível para este recurso
+          {isHourly ? "Horário indisponível para este recurso" : "Data indisponível para este recurso"}
         </div>
       )}
 
@@ -262,12 +327,34 @@ export function BookingForm({ merchantId, merchantName, merchantWhatsapp, assets
         />
       </div>
 
+      <div className="space-y-2">
+        <Label htmlFor="email">E-mail (opcional)</Label>
+        <Input
+          id="email"
+          type="email"
+          placeholder="seu@email.com"
+          value={customerEmail}
+          onChange={(event) => setCustomerEmail(event.target.value)}
+        />
+      </div>
+
       {selectedAsset && (
         <div className="rounded-lg bg-muted/50 p-4">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Valor total</span>
+            <span className="text-muted-foreground">
+              {isHourly ? "Valor por hora" : "Valor total"}
+            </span>
             <span className="font-medium">R$ {selectedAsset.basePrice.toFixed(2)}</span>
           </div>
+          {selectedAsset.durationMinutes && (
+            <div className="flex items-center justify-between text-sm mt-1">
+              <span className="text-muted-foreground">Duração</span>
+              <span className="font-medium flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {selectedAsset.durationMinutes} min
+              </span>
+            </div>
+          )}
           <div className="mt-2 flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Sinal (30%)</span>
             <span className="text-lg font-bold text-primary">
@@ -287,7 +374,7 @@ export function BookingForm({ merchantId, merchantName, merchantWhatsapp, assets
       <Button
         className="w-full"
         size="lg"
-        disabled={loading || availability === "unavailable" || checkingAvailability}
+        disabled={loading || availability === "unavailable" || checkingAvailability || (isHourly && !startTime)}
         type="submit"
       >
         {loading ? (

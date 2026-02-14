@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { CalendarDays, DollarSign, Users, TrendingUp, AlertTriangle } from "lucide-react";
+import { CalendarDays, DollarSign, Users, TrendingUp, AlertTriangle, Ship } from "lucide-react";
 import { StatsCard, RecentBookings, QuickActions } from "@/components/dashboard";
 import { getDashboardSummary, listMerchantBookings } from "@/lib/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +13,7 @@ export default async function DashboardPage() {
     redirect("/sign-in?redirect_url=/dashboard");
   }
 
-  let summary = { bookingsToday: 0, monthRevenue: 0 };
+  let summary = { bookingsToday: 0, monthRevenue: 0, pendingBookings: 0, totalAssets: 0, activeAssets: 0 };
   let bookings: Awaited<ReturnType<typeof listMerchantBookings>>["bookings"] = [];
   let hasError = false;
 
@@ -29,7 +29,6 @@ export default async function DashboardPage() {
     hasError = true;
   }
 
-  // Calculate additional stats
   const confirmedBookings = bookings.filter((b) => b.status === "CONFIRMED").length;
   const pendingBookings = bookings.filter((b) => b.status === "PENDING_PAYMENT").length;
 
@@ -84,7 +83,6 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Visão Geral</h1>
         <p className="text-muted-foreground">
@@ -92,7 +90,6 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="Reservas Hoje"
@@ -115,13 +112,33 @@ export default async function DashboardPage() {
         />
         <StatsCard
           title="Aguardando"
-          value={pendingBookings.toString()}
+          value={summary.pendingBookings.toString()}
           icon={Users}
           description="aguardando pagamento"
         />
       </div>
 
-      {/* Main Content Grid */}
+      {summary.totalAssets === 0 && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
+                <Ship className="h-5 w-5 text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-blue-900">Comece cadastrando seus recursos</h3>
+                <p className="text-sm text-blue-700 mt-1">
+                  Adicione barcos, quadras, guias ou qualquer recurso que seus clientes possam reservar.
+                </p>
+                <Button size="sm" className="mt-3" asChild>
+                  <Link href="/dashboard/assets">Cadastrar Recursos</Link>
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <RecentBookings bookings={bookings} />

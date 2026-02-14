@@ -1,0 +1,10 @@
+DROP TABLE IF EXISTS payments;
+ALTER TABLE bookings DROP COLUMN IF EXISTS copy_paste_code;
+ALTER TABLE bookings DROP COLUMN IF EXISTS qr_code;
+ALTER TABLE bookings DROP COLUMN IF EXISTS end_time;
+ALTER TABLE bookings DROP COLUMN IF EXISTS start_time;
+ALTER TABLE bookings DROP COLUMN IF EXISTS customer_email;
+ALTER TABLE assets DROP COLUMN IF EXISTS duration_minutes;
+ALTER TABLE assets DROP COLUMN IF EXISTS description;
+ALTER TABLE merchants DROP COLUMN IF EXISTS mercado_pago_access_token;
+ALTER TABLE merchants DROP COLUMN IF EXISTS email;

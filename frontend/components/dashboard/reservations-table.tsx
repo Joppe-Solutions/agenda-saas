@@ -83,7 +83,7 @@ export function ReservationsTable({ merchantId, initialBookings }: ReservationsT
         <TableHeader>
           <TableRow>
             <TableHead>Cliente</TableHead>
-            <TableHead>Data</TableHead>
+            <TableHead>Data/Hora</TableHead>
             <TableHead>Pessoas</TableHead>
             <TableHead>Valor</TableHead>
             <TableHead>Status</TableHead>
@@ -114,9 +114,12 @@ export function ReservationsTable({ merchantId, initialBookings }: ReservationsT
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
-                    {format(new Date(booking.bookingDate), "dd 'de' MMM, yyyy", {
-                      locale: ptBR,
-                    })}
+                    <div>
+                      <p>{format(new Date(booking.bookingDate + "T12:00:00"), "dd 'de' MMM, yyyy", { locale: ptBR })}</p>
+                      {booking.startTime && (
+                        <p className="text-xs text-muted-foreground">{booking.startTime}</p>
+                      )}
+                    </div>
                   </div>
                 </TableCell>
                 <TableCell>

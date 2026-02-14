@@ -14,15 +14,19 @@ export interface Merchant {
   niche: MerchantNiche;
   whatsappNumber: string;
   pixKey: string;
+  email?: string;
+  mercadoPagoAccessToken?: string;
 }
 
 export interface Asset {
   id: string;
   merchantId: string;
   name: string;
+  description?: string;
   capacity: number;
   basePrice: number;
   pricingType: PricingType;
+  durationMinutes?: number;
   active: boolean;
 }
 
@@ -32,9 +36,29 @@ export interface Booking {
   merchantId: string;
   customerName: string;
   customerPhone: string;
+  customerEmail?: string;
   bookingDate: string;
+  startTime?: string;
+  endTime?: string;
   peopleCount: number;
   status: BookingStatus;
   depositAmount: number;
   paymentId: string | null;
+  qrCode?: string;
+  copyPasteCode?: string;
+}
+
+export interface Payment {
+  id: string;
+  bookingId: string;
+  merchantId: string;
+  amount: number;
+  status: "pending" | "approved" | "rejected" | "refunded";
+  paymentMethod: "PIX";
+  provider: "MERCADO_PAGO" | "STUB";
+  providerPaymentId: string;
+  qrCode?: string;
+  copyPasteCode?: string;
+  paidAt?: string;
+  createdAt: string;
 }

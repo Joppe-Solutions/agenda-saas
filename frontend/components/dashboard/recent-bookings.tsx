@@ -58,7 +58,9 @@ export function RecentBookings({ bookings }: RecentBookingsProps) {
                   <div>
                     <p className="font-medium">{booking.customerName}</p>
                     <p className="text-sm text-muted-foreground">
-                      {new Date(booking.bookingDate).toLocaleDateString("pt-BR")} •{" "}
+                      {new Date(booking.bookingDate + "T12:00:00").toLocaleDateString("pt-BR")}
+                      {booking.startTime && ` • ${booking.startTime}`}
+                      {" • "}
                       {booking.peopleCount} {booking.peopleCount === 1 ? "pessoa" : "pessoas"}
                     </p>
                   </div>

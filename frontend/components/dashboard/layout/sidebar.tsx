@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarCheck, LayoutDashboard, CalendarDays, Ship, Settings, HelpCircle, CreditCard } from "lucide-react";
+import { CalendarCheck, LayoutDashboard, CalendarDays, Ship, Settings, HelpCircle, CreditCard, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigation = [
@@ -10,6 +10,7 @@ const navigation = [
   { name: "Reservas", href: "/dashboard/bookings", icon: CalendarDays },
   { name: "Recursos", href: "/dashboard/assets", icon: Ship },
   { name: "Pagamentos", href: "/dashboard/payments", icon: CreditCard },
+  { name: "Relatórios", href: "/dashboard/reports", icon: BarChart3 },
 ];
 
 const secondaryNavigation = [
