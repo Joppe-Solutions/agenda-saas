@@ -1,5 +1,10 @@
 -- Drop indexes
+DROP INDEX IF EXISTS idx_notifications_type_sent;
+DROP INDEX IF EXISTS idx_notifications_booking_id;
 DROP INDEX IF EXISTS idx_bookings_signal_expires;
+
+-- Drop notifications table
+DROP TABLE IF EXISTS notifications;
 
 -- Revert payments foreign key
 ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_booking_id_fkey;

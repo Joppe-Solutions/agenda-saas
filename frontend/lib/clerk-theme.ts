@@ -1,14 +1,14 @@
 export const clerkTheme = {
   baseTheme: undefined,
   variables: {
-    colorPrimary: "#14347F",
+    colorPrimary: "#00C8FF",
     colorBackground: "#FFFFFF",
     colorInputBackground: "#F8FAFC",
     colorInputText: "#0B1220",
     colorNeutral: "#64748B",
     colorDanger: "#DC2626",
     colorSuccess: "#16A34A",
-    colorWarning: "#F59E0B",
+    colorWarning: "#00C8FF",
     borderRadius: "12px",
     fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
   },
@@ -32,20 +32,20 @@ export const clerkTheme = {
       color: "#64748B",
     },
     formButtonPrimary: {
-      backgroundColor: "#FFB800",
-      color: "#0D1E52",
+      backgroundColor: "#00C8FF",
+      color: "#FFFFFF",
       fontSize: "14px",
       fontWeight: "600",
       padding: "12px 16px",
       borderRadius: "12px",
       "&:hover": {
-        backgroundColor: "#FFC52B",
+        backgroundColor: "#00A8D9",
       },
       "&:focus": {
-        boxShadow: "0 0 0 2px #00A9E6",
+        boxShadow: "0 0 0 2px #00C8FF",
       },
       "&:active": {
-        backgroundColor: "#D99500",
+        backgroundColor: "#0095C2",
       },
     },
     formButtonSecondary: {
@@ -67,8 +67,8 @@ export const clerkTheme = {
       border: "1px solid #E2E8F0",
       backgroundColor: "#FFFFFF",
       "&:focus": {
-        borderColor: "#00A9E6",
-        boxShadow: "0 0 0 2px rgba(0, 169, 230, 0.2)",
+        borderColor: "#00C8FF",
+        boxShadow: "0 0 0 2px rgba(0, 200, 255, 0.2)",
       },
     },
     formFieldLabel: {
@@ -78,18 +78,18 @@ export const clerkTheme = {
       marginBottom: "8px",
     },
     formFieldAction: {
-      color: "#00A9E6",
+      color: "#00C8FF",
       fontSize: "13px",
       fontWeight: "600",
       "&:hover": {
-        color: "#2FC6FF",
+        color: "#00A8D9",
       },
     },
     footerActionLink: {
-      color: "#00A9E6",
+      color: "#00C8FF",
       fontWeight: "600",
       "&:hover": {
-        color: "#2FC6FF",
+        color: "#00A8D9",
       },
     },
     footerActionText: {
@@ -130,7 +130,7 @@ export const clerkTheme = {
       fontSize: "14px",
     },
     formResendCodeLink: {
-      color: "#00A9E6",
+      color: "#00C8FF",
       fontWeight: "600",
     },
     otpCodeFieldInput: {
@@ -139,8 +139,8 @@ export const clerkTheme = {
       fontSize: "20px",
       fontWeight: "600",
       "&:focus": {
-        borderColor: "#00A9E6",
-        boxShadow: "0 0 0 2px rgba(0, 169, 230, 0.2)",
+        borderColor: "#00C8FF",
+        boxShadow: "0 0 0 2px rgba(0, 200, 255, 0.2)",
       },
     },
   },
@@ -150,9 +150,9 @@ export const clerkThemeDark = {
   ...clerkTheme,
   variables: {
     ...clerkTheme.variables,
-    colorPrimary: "#FFB800",
-    colorBackground: "#0D1E52",
-    colorInputBackground: "#112768",
+    colorPrimary: "#00D4FF",
+    colorBackground: "#0D1E36",
+    colorInputBackground: "#142744",
     colorInputText: "#F8FAFC",
     colorNeutral: "#CBD5E1",
   },
@@ -160,8 +160,8 @@ export const clerkThemeDark = {
     ...clerkTheme.elements,
     card: {
       ...clerkTheme.elements.card,
-      border: "1px solid #1E3FAF",
-      backgroundColor: "#112768",
+      border: "1px solid #1E3A5F",
+      backgroundColor: "#142744",
     },
     headerTitle: {
       ...clerkTheme.elements.headerTitle,
@@ -173,28 +173,28 @@ export const clerkThemeDark = {
     },
     formButtonPrimary: {
       ...clerkTheme.elements.formButtonPrimary,
-      backgroundColor: "#FFB800",
-      color: "#0D1E52",
+      backgroundColor: "#00D4FF",
+      color: "#0D1E36",
       "&:hover": {
-        backgroundColor: "#FFC52B",
+        backgroundColor: "#00BDE6",
       },
     },
     formButtonSecondary: {
       ...clerkTheme.elements.formButtonSecondary,
-      backgroundColor: "#14347F",
+      backgroundColor: "#1E3A5F",
       color: "#F8FAFC",
-      border: "1px solid #1E3FAF",
+      border: "1px solid #2A4A70",
       "&:hover": {
-        backgroundColor: "#1E3FAF",
+        backgroundColor: "#2A4A70",
       },
     },
     formFieldInput: {
       ...clerkTheme.elements.formFieldInput,
-      backgroundColor: "#112768",
-      border: "1px solid #1E3FAF",
+      backgroundColor: "#142744",
+      border: "1px solid #1E3A5F",
       color: "#F8FAFC",
       "&:focus": {
-        borderColor: "#00A9E6",
+        borderColor: "#00D4FF",
       },
     },
     formFieldLabel: {
@@ -203,10 +203,10 @@ export const clerkThemeDark = {
     },
     socialButtonsBlockButton: {
       ...clerkTheme.elements.socialButtonsBlockButton,
-      backgroundColor: "#112768",
-      border: "1px solid #1E3FAF",
+      backgroundColor: "#142744",
+      border: "1px solid #1E3A5F",
       "&:hover": {
-        backgroundColor: "#14347F",
+        backgroundColor: "#1E3A5F",
       },
     },
     socialButtonsBlockButtonText: {
@@ -215,8 +215,8 @@ export const clerkThemeDark = {
     },
     identityPreview: {
       ...clerkTheme.elements.identityPreview,
-      backgroundColor: "#14347F",
-      border: "1px solid #1E3FAF",
+      backgroundColor: "#1E3A5F",
+      border: "1px solid #2A4A70",
     },
     footerActionText: {
       ...clerkTheme.elements.footerActionText,
@@ -224,7 +224,7 @@ export const clerkThemeDark = {
     },
     dividerLine: {
       ...clerkTheme.elements.dividerLine,
-      backgroundColor: "#1E3FAF",
+      backgroundColor: "#1E3A5F",
     },
     dividerText: {
       ...clerkTheme.elements.dividerText,
@@ -232,12 +232,12 @@ export const clerkThemeDark = {
     },
     alert: {
       ...clerkTheme.elements.alert,
-      backgroundColor: "#14347F",
+      backgroundColor: "#1E3A5F",
     },
     otpCodeFieldInput: {
       ...clerkTheme.elements.otpCodeFieldInput,
-      backgroundColor: "#112768",
-      border: "1px solid #1E3FAF",
+      backgroundColor: "#142744",
+      border: "1px solid #1E3A5F",
       color: "#F8FAFC",
     },
   },
@@ -245,7 +245,7 @@ export const clerkThemeDark = {
 
 export const userButtonTheme = {
   variables: {
-    colorPrimary: "#14347F",
+    colorPrimary: "#00C8FF",
     colorBackground: "#FFFFFF",
     colorNeutral: "#64748B",
     borderRadius: "12px",
@@ -257,7 +257,7 @@ export const userButtonTheme = {
     userButtonTriggerBox: {
       borderRadius: "10px",
       "&:focus": {
-        boxShadow: "0 0 0 2px rgba(0, 169, 230, 0.4)",
+        boxShadow: "0 0 0 2px rgba(0, 200, 255, 0.4)",
       },
     },
     userButtonAvatarBox: {
@@ -311,8 +311,8 @@ export const userButtonTheme = {
 
 export const userButtonThemeDark = {
   variables: {
-    colorPrimary: "#FFB800",
-    colorBackground: "#0D1E52",
+    colorPrimary: "#00D4FF",
+    colorBackground: "#0D1E36",
     colorNeutral: "#CBD5E1",
     borderRadius: "12px",
   },
@@ -320,14 +320,14 @@ export const userButtonThemeDark = {
     ...userButtonTheme.elements,
     popoverCard: {
       ...userButtonTheme.elements.popoverCard,
-      border: "1px solid #1E3FAF",
-      backgroundColor: "#112768",
+      border: "1px solid #1E3A5F",
+      backgroundColor: "#142744",
     },
     popoverActionButton: {
       ...userButtonTheme.elements.popoverActionButton,
       color: "#F8FAFC",
       "&:hover": {
-        backgroundColor: "#14347F",
+        backgroundColor: "#1E3A5F",
       },
     },
     popoverActionButtonIcon: {
@@ -343,11 +343,11 @@ export const userButtonThemeDark = {
     },
     userPreview: {
       ...userButtonTheme.elements.userPreview,
-      backgroundColor: "#14347F",
+      backgroundColor: "#1E3A5F",
     },
     dividerLine: {
       ...userButtonTheme.elements.dividerLine,
-      backgroundColor: "#1E3FAF",
+      backgroundColor: "#1E3A5F",
     },
   },
 } as const;

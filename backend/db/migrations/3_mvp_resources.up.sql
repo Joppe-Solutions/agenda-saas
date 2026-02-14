@@ -129,3 +129,19 @@ ALTER TABLE payments ADD CONSTRAINT payments_booking_id_fkey
 -- Create index for signal expiration job
 CREATE INDEX idx_bookings_signal_expires ON bookings(status, signal_expires_at) 
   WHERE status = 'pending_payment' AND signal_expires_at IS NOT NULL;
+
+-- Notifications table
+CREATE TABLE notifications (
+  id UUID PRIMARY KEY,
+  booking_id UUID NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+  type TEXT NOT NULL,
+  channel TEXT NOT NULL DEFAULT 'whatsapp',
+  status TEXT NOT NULL DEFAULT 'pending',
+  message TEXT,
+  error TEXT,
+  sent_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_notifications_booking_id ON notifications(booking_id);
+CREATE INDEX idx_notifications_type_sent ON notifications(type, sent_at);

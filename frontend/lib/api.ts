@@ -2,7 +2,7 @@ import type {
   Resource, Booking, CreateBookingInput, Merchant, CreateResourceInput, 
   UpdateResourceInput, UpsertMerchantInput, Payment, TimeSlot, AvailabilityRule,
   CreateAvailabilityRuleInput, Block, CreateBlockInput, ResourceTemplate,
-  DashboardStats, BookingStatus
+  DashboardStats, BookingStatus, Customer
 } from "@/lib/types";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_ENCORE_API_URL ?? "http://localhost:4000";
@@ -199,12 +199,67 @@ export async function checkPaymentStatus(paymentId: string) {
   return request<{ status: string; bookingId: string }>(`/payment/${paymentId}/status`);
 }
 
-// Legacy aliases for backward compatibility
-export const listMerchantAssets = listMerchantResources;
-export const getAsset = getResource;
-export const createAsset = createResource;
-export const updateAsset = updateResource;
-export const deleteAsset = deleteResource;
-export type Asset = Resource;
-export type CreateAssetInput = CreateResourceInput;
-export type UpdateAssetInput = UpdateResourceInput;
+export async function getReportsSummary(merchantId: string, period?: "day" | "week" | "month") {
+  const query = period ? `?period=${period}` : "";
+  return request<{
+    period: string;
+    totalBookings: number;
+    confirmedBookings: number;
+    cancelledBookings: number;
+    noShowCount: number;
+    totalRevenue: number;
+    pendingRevenue: number;
+    avgBookingValue: number;
+    noShowRate: number;
+    topResources: Array<{
+      resourceId: string;
+      resourceName: string;
+      bookingCount: number;
+      revenue: number;
+    }>;
+    dailyBreakdown: Array<{
+      date: string;
+      bookings: number;
+      revenue: number;
+    }>;
+  }>(`/merchant/${merchantId}/reports/summary${query}`);
+}
+
+export async function getCustomersList(merchantId: string, search?: string) {
+  const query = search ? `?search=${encodeURIComponent(search)}` : "";
+  return request<{
+    customers: Array<{
+      id: string;
+      name: string;
+      phone: string;
+      email?: string;
+      document?: string;
+      notes?: string;
+      createdAt: string;
+      totalBookings: number;
+      totalSpent: number;
+      lastBookingDate?: string;
+    }>;
+  }>(`/merchant/${merchantId}/customers${query}`);
+}
+
+export async function getCustomerHistory(customerId: string) {
+  return request<{
+    customer: Customer;
+    stats: {
+      totalBookings: number;
+      totalSpent: number;
+      noShowCount: number;
+    };
+    bookings: Booking[];
+  }>(`/customer/${customerId}/history`);
+}
+
+export { Resource as Asset };
+export { CreateResourceInput as CreateAssetInput };
+export { UpdateResourceInput as UpdateAssetInput };
+export { listMerchantResources as listMerchantAssets };
+export { getResource as getAsset };
+export { createResource as createAsset };
+export { updateResource as updateAsset };
+export { deleteResource as deleteAsset };

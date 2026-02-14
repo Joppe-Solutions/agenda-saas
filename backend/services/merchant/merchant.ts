@@ -902,7 +902,7 @@ export const createBlock = api(
       )
     `;
 
-    return {
+return {
       block: {
         id: blockId,
         resourceId: parsed.data.resourceId,
@@ -1252,6 +1252,368 @@ export const checkPaymentStatus = api(
     return {
       status: payment.status,
       bookingId: payment.booking_id,
+    };
+  },
+);
+
+// ============ REPORTS ============
+
+export const getReportsSummary = api(
+  { expose: true, method: "GET", path: "/merchant/:merchantId/reports/summary" },
+  async ({ merchantId, period }: { merchantId: string; period?: "day" | "week" | "month" }) => {
+    const periodFilter = period ?? "month";
+
+    let stats: {
+      total_bookings: number;
+      confirmed_bookings: number;
+      cancelled_bookings: number;
+      no_show_count: number;
+      total_revenue: number;
+      pending_revenue: number;
+      avg_booking_value: number;
+    } | null;
+
+    let topResources: {
+      resource_id: string;
+      resource_name: string;
+      booking_count: number;
+      revenue: number;
+    }[];
+
+    let dailyBreakdown: {
+      date: Date;
+      bookings: number;
+      revenue: number;
+    }[];
+
+    if (periodFilter === "day") {
+      stats = await db.queryRow<{
+        total_bookings: number;
+        confirmed_bookings: number;
+        cancelled_bookings: number;
+        no_show_count: number;
+        total_revenue: number;
+        pending_revenue: number;
+        avg_booking_value: number;
+      }>`
+        SELECT
+          COUNT(*)::int AS total_bookings,
+          COUNT(*) FILTER (WHERE status IN ('confirmed', 'in_progress', 'completed'))::int AS confirmed_bookings,
+          COUNT(*) FILTER (WHERE status = 'cancelled')::int AS cancelled_bookings,
+          COUNT(*) FILTER (WHERE status = 'no_show')::int AS no_show_count,
+          COALESCE(SUM(total_amount) FILTER (WHERE status IN ('confirmed', 'completed')), 0)::numeric AS total_revenue,
+          COALESCE(SUM(deposit_amount) FILTER (WHERE status = 'pending_payment'), 0)::numeric AS pending_revenue,
+          COALESCE(AVG(total_amount) FILTER (WHERE status IN ('confirmed', 'completed')), 0)::numeric AS avg_booking_value
+        FROM bookings
+        WHERE merchant_id = ${merchantId}
+          AND booking_date = CURRENT_DATE
+      `;
+
+      topResources = await db.queryAll<{
+        resource_id: string;
+        resource_name: string;
+        booking_count: number;
+        revenue: number;
+      }>`
+        SELECT 
+          r.id AS resource_id,
+          r.name AS resource_name,
+          COUNT(b.id)::int AS booking_count,
+          COALESCE(SUM(b.total_amount), 0)::numeric AS revenue
+        FROM resources r
+        LEFT JOIN bookings b ON b.resource_id = r.id 
+          AND b.merchant_id = ${merchantId}
+          AND b.status IN ('confirmed', 'completed')
+          AND b.booking_date = CURRENT_DATE
+        WHERE r.merchant_id = ${merchantId}
+        GROUP BY r.id, r.name
+        ORDER BY booking_count DESC
+        LIMIT 5
+      `;
+
+      dailyBreakdown = [];
+    } else if (periodFilter === "week") {
+      stats = await db.queryRow<{
+        total_bookings: number;
+        confirmed_bookings: number;
+        cancelled_bookings: number;
+        no_show_count: number;
+        total_revenue: number;
+        pending_revenue: number;
+        avg_booking_value: number;
+      }>`
+        SELECT
+          COUNT(*)::int AS total_bookings,
+          COUNT(*) FILTER (WHERE status IN ('confirmed', 'in_progress', 'completed'))::int AS confirmed_bookings,
+          COUNT(*) FILTER (WHERE status = 'cancelled')::int AS cancelled_bookings,
+          COUNT(*) FILTER (WHERE status = 'no_show')::int AS no_show_count,
+          COALESCE(SUM(total_amount) FILTER (WHERE status IN ('confirmed', 'completed')), 0)::numeric AS total_revenue,
+          COALESCE(SUM(deposit_amount) FILTER (WHERE status = 'pending_payment'), 0)::numeric AS pending_revenue,
+          COALESCE(AVG(total_amount) FILTER (WHERE status IN ('confirmed', 'completed')), 0)::numeric AS avg_booking_value
+        FROM bookings
+        WHERE merchant_id = ${merchantId}
+          AND booking_date >= CURRENT_DATE - INTERVAL '7 days'
+      `;
+
+      topResources = await db.queryAll<{
+        resource_id: string;
+        resource_name: string;
+        booking_count: number;
+        revenue: number;
+      }>`
+        SELECT 
+          r.id AS resource_id,
+          r.name AS resource_name,
+          COUNT(b.id)::int AS booking_count,
+          COALESCE(SUM(b.total_amount), 0)::numeric AS revenue
+        FROM resources r
+        LEFT JOIN bookings b ON b.resource_id = r.id 
+          AND b.merchant_id = ${merchantId}
+          AND b.status IN ('confirmed', 'completed')
+          AND b.booking_date >= CURRENT_DATE - INTERVAL '7 days'
+        WHERE r.merchant_id = ${merchantId}
+        GROUP BY r.id, r.name
+        ORDER BY booking_count DESC
+        LIMIT 5
+      `;
+
+      dailyBreakdown = await db.queryAll<{
+        date: Date;
+        bookings: number;
+        revenue: number;
+      }>`
+        SELECT 
+          booking_date AS date,
+          COUNT(*)::int AS bookings,
+          COALESCE(SUM(total_amount) FILTER (WHERE status IN ('confirmed', 'completed')), 0)::numeric AS revenue
+        FROM bookings
+        WHERE merchant_id = ${merchantId}
+          AND booking_date >= CURRENT_DATE - INTERVAL '7 days'
+        GROUP BY booking_date
+        ORDER BY booking_date ASC
+      `;
+    } else {
+      stats = await db.queryRow<{
+        total_bookings: number;
+        confirmed_bookings: number;
+        cancelled_bookings: number;
+        no_show_count: number;
+        total_revenue: number;
+        pending_revenue: number;
+        avg_booking_value: number;
+      }>`
+        SELECT
+          COUNT(*)::int AS total_bookings,
+          COUNT(*) FILTER (WHERE status IN ('confirmed', 'in_progress', 'completed'))::int AS confirmed_bookings,
+          COUNT(*) FILTER (WHERE status = 'cancelled')::int AS cancelled_bookings,
+          COUNT(*) FILTER (WHERE status = 'no_show')::int AS no_show_count,
+          COALESCE(SUM(total_amount) FILTER (WHERE status IN ('confirmed', 'completed')), 0)::numeric AS total_revenue,
+          COALESCE(SUM(deposit_amount) FILTER (WHERE status = 'pending_payment'), 0)::numeric AS pending_revenue,
+          COALESCE(AVG(total_amount) FILTER (WHERE status IN ('confirmed', 'completed')), 0)::numeric AS avg_booking_value
+        FROM bookings
+        WHERE merchant_id = ${merchantId}
+          AND DATE_TRUNC('month', booking_date) = DATE_TRUNC('month', CURRENT_DATE)
+      `;
+
+      topResources = await db.queryAll<{
+        resource_id: string;
+        resource_name: string;
+        booking_count: number;
+        revenue: number;
+      }>`
+        SELECT 
+          r.id AS resource_id,
+          r.name AS resource_name,
+          COUNT(b.id)::int AS booking_count,
+          COALESCE(SUM(b.total_amount), 0)::numeric AS revenue
+        FROM resources r
+        LEFT JOIN bookings b ON b.resource_id = r.id 
+          AND b.merchant_id = ${merchantId}
+          AND b.status IN ('confirmed', 'completed')
+          AND DATE_TRUNC('month', b.booking_date) = DATE_TRUNC('month', CURRENT_DATE)
+        WHERE r.merchant_id = ${merchantId}
+        GROUP BY r.id, r.name
+        ORDER BY booking_count DESC
+        LIMIT 5
+      `;
+
+      dailyBreakdown = await db.queryAll<{
+        date: Date;
+        bookings: number;
+        revenue: number;
+      }>`
+        SELECT 
+          booking_date AS date,
+          COUNT(*)::int AS bookings,
+          COALESCE(SUM(total_amount) FILTER (WHERE status IN ('confirmed', 'completed')), 0)::numeric AS revenue
+        FROM bookings
+        WHERE merchant_id = ${merchantId}
+          AND DATE_TRUNC('month', booking_date) = DATE_TRUNC('month', CURRENT_DATE)
+        GROUP BY booking_date
+        ORDER BY booking_date ASC
+      `;
+    }
+
+    return {
+      period: periodFilter,
+      totalBookings: stats?.total_bookings ?? 0,
+      confirmedBookings: stats?.confirmed_bookings ?? 0,
+      cancelledBookings: stats?.cancelled_bookings ?? 0,
+      noShowCount: stats?.no_show_count ?? 0,
+      totalRevenue: Number(stats?.total_revenue ?? 0),
+      pendingRevenue: Number(stats?.pending_revenue ?? 0),
+      avgBookingValue: Number(stats?.avg_booking_value ?? 0),
+      noShowRate: stats?.total_bookings 
+        ? Math.round((stats.no_show_count / stats.total_bookings) * 100) 
+        : 0,
+      topResources: topResources.map(r => ({
+        resourceId: r.resource_id,
+        resourceName: r.resource_name,
+        bookingCount: r.booking_count,
+        revenue: Number(r.revenue),
+      })),
+      dailyBreakdown: dailyBreakdown.map(d => ({
+        date: d.date.toISOString().split('T')[0],
+        bookings: d.bookings,
+        revenue: Number(d.revenue),
+      })),
+    };
+  },
+);
+
+export const getCustomersList = api(
+  { expose: true, method: "GET", path: "/merchant/:merchantId/customers" },
+  async ({ merchantId, search }: { merchantId: string; search?: string }) => {
+    const searchPattern = search ? `%${search}%` : null;
+
+    const rows = await db.queryAll<{
+      id: string;
+      name: string;
+      phone: string;
+      email: string | null;
+      document: string | null;
+      notes: string | null;
+      created_at: Date;
+      total_bookings: number;
+      total_spent: number;
+      last_booking_date: Date | null;
+    }>`
+      SELECT c.id, c.name, c.phone, c.email, c.document, c.notes, c.created_at,
+             COUNT(b.id)::int AS total_bookings,
+             COALESCE(SUM(b.total_amount), 0)::numeric AS total_spent,
+             MAX(b.booking_date) AS last_booking_date
+      FROM customers c
+      LEFT JOIN bookings b ON b.customer_id = c.id
+      WHERE c.merchant_id = ${merchantId}
+        AND (${searchPattern}::text IS NULL OR c.name ILIKE ${searchPattern} OR c.phone ILIKE ${searchPattern})
+      GROUP BY c.id
+      ORDER BY total_bookings DESC, c.created_at DESC
+      LIMIT 100
+    `;
+
+    return {
+      customers: rows.map(row => ({
+        id: row.id,
+        name: row.name,
+        phone: row.phone,
+        email: row.email ?? undefined,
+        document: row.document ?? undefined,
+        notes: row.notes ?? undefined,
+        createdAt: row.created_at.toISOString(),
+        totalBookings: row.total_bookings,
+        totalSpent: Number(row.total_spent),
+        lastBookingDate: row.last_booking_date?.toISOString().split('T')[0],
+      })),
+    };
+  },
+);
+
+export const getCustomerHistory = api(
+  { expose: true, method: "GET", path: "/customer/:customerId/history" },
+  async ({ customerId }: { customerId: string }) => {
+    const customer = await db.queryRow<{
+      id: string;
+      merchant_id: string;
+      name: string;
+      phone: string;
+      email: string | null;
+      document: string | null;
+      notes: string | null;
+      created_at: Date;
+    }>`
+      SELECT id, merchant_id, name, phone, email, document, notes, created_at
+      FROM customers
+      WHERE id = ${customerId}
+    `;
+
+    if (!customer) {
+      throw APIError.notFound("Customer not found");
+    }
+
+    const bookings = await db.queryAll<{
+      id: string;
+      resource_id: string;
+      resource_name: string;
+      booking_date: Date;
+      start_time: string | null;
+      end_time: string | null;
+      people_count: number;
+      status: string;
+      total_amount: number;
+      deposit_amount: number;
+      created_at: Date;
+    }>`
+      SELECT b.id, b.resource_id, r.name AS resource_name, b.booking_date, b.start_time, b.end_time,
+             b.people_count, b.status, b.total_amount, b.deposit_amount, b.created_at
+      FROM bookings b
+      LEFT JOIN resources r ON r.id = b.resource_id
+      WHERE b.customer_id = ${customerId}
+      ORDER BY b.booking_date DESC, b.created_at DESC
+      LIMIT 50
+    `;
+
+    const stats = await db.queryRow<{
+      total_bookings: number;
+      total_spent: number;
+      no_show_count: number;
+    }>`
+      SELECT 
+        COUNT(*)::int AS total_bookings,
+        COALESCE(SUM(total_amount) FILTER (WHERE status IN ('confirmed', 'completed')), 0)::numeric AS total_spent,
+        COUNT(*) FILTER (WHERE status = 'no_show')::int AS no_show_count
+      FROM bookings
+      WHERE customer_id = ${customerId}
+    `;
+
+    return {
+      customer: {
+        id: customer.id,
+        merchantId: customer.merchant_id,
+        name: customer.name,
+        phone: customer.phone,
+        email: customer.email ?? undefined,
+        document: customer.document ?? undefined,
+        notes: customer.notes ?? undefined,
+        createdAt: customer.created_at.toISOString(),
+      },
+      stats: {
+        totalBookings: stats?.total_bookings ?? 0,
+        totalSpent: Number(stats?.total_spent ?? 0),
+        noShowCount: stats?.no_show_count ?? 0,
+      },
+      bookings: bookings.map(b => ({
+        id: b.id,
+        resourceId: b.resource_id,
+        resourceName: b.resource_name,
+        bookingDate: b.booking_date.toISOString().split('T')[0],
+        startTime: b.start_time ?? undefined,
+        endTime: b.end_time ?? undefined,
+        peopleCount: b.people_count,
+        status: b.status,
+        totalAmount: Number(b.total_amount),
+        depositAmount: Number(b.deposit_amount),
+        createdAt: b.created_at.toISOString(),
+      })),
     };
   },
 );
