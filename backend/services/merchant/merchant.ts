@@ -1,9 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { api, APIError } from "encore.dev/api";
 import { db } from "../../db/db";
-import { upsertMerchantSchema, clerkWebhookSchema, createAssetSchema, updateAssetSchema } from "../shared/validators";
+import { upsertMerchantSchema, createResourceSchema, updateResourceSchema, createAvailabilityRuleSchema, createBlockSchema } from "../shared/validators";
 import { createPixPayment, verifyPaymentStatus, PaymentProvider } from "./gateway";
-import type { Asset, Merchant, Payment } from "../shared/types";
+import type { Resource, Merchant, Payment, AvailabilityRule, Block, Booking, TimeSlot } from "../shared/types";
+import { resourceTemplates } from "../shared/types";
 
 interface GetPublicMerchantParams {
   slug: string;
@@ -18,6 +19,11 @@ interface UpsertMerchantBody {
   pixKey: string;
   email?: string;
   mercadoPagoAccessToken?: string;
+  address?: string;
+  city?: string;
+  signalPercentage?: number;
+  signalDeadlineMinutes?: number;
+  signalAutoCancel?: boolean;
 }
 
 interface DashboardParams {
@@ -26,7 +32,7 @@ interface DashboardParams {
 
 export const getPublicMerchant = api(
   { expose: true, method: "GET", path: "/public/merchant/:slug" },
-  async ({ slug }: GetPublicMerchantParams): Promise<{ merchant: Merchant; assets: Asset[] }> => {
+  async ({ slug }: GetPublicMerchantParams): Promise<{ merchant: Merchant; resources: Resource[] }> => {
     const merchant = await db.queryRow<{
       id: string;
       slug: string;
@@ -35,8 +41,12 @@ export const getPublicMerchant = api(
       whatsapp_number: string;
       pix_key: string;
       email: string | null;
+      signal_percentage: number;
+      signal_deadline_minutes: number;
+      signal_auto_cancel: boolean;
     }>`
-      SELECT id, slug, business_name, niche, whatsapp_number, pix_key, email
+      SELECT id, slug, business_name, niche, whatsapp_number, pix_key, email, 
+             signal_percentage, signal_deadline_minutes, signal_auto_cancel
       FROM merchants
       WHERE slug = ${slug}
     `;
@@ -45,19 +55,25 @@ export const getPublicMerchant = api(
       throw APIError.notFound("Merchant not found");
     }
 
-    const assets = await db.queryAll<{
+    const resources = await db.queryAll<{
       id: string;
       merchant_id: string;
       name: string;
       description: string | null;
+      resource_type: Resource["resourceType"];
       capacity: number;
       base_price: number;
-      pricing_type: Asset["pricingType"];
+      pricing_type: Resource["pricingType"];
       duration_minutes: number | null;
+      buffer_before_minutes: number;
+      buffer_after_minutes: number;
+      photos: string[];
+      terms: string | null;
       active: boolean;
     }>`
-      SELECT id, merchant_id, name, description, capacity, base_price, pricing_type, duration_minutes, active
-      FROM assets
+      SELECT id, merchant_id, name, description, resource_type, capacity, base_price, pricing_type, 
+             duration_minutes, buffer_before_minutes, buffer_after_minutes, photos, terms, active
+      FROM resources
       WHERE merchant_id = ${merchant.id} AND active = TRUE
       ORDER BY name ASC
     `;
@@ -71,16 +87,24 @@ export const getPublicMerchant = api(
         whatsappNumber: merchant.whatsapp_number,
         pixKey: merchant.pix_key,
         email: merchant.email ?? undefined,
+        signalPercentage: merchant.signal_percentage,
+        signalDeadlineMinutes: merchant.signal_deadline_minutes,
+        signalAutoCancel: merchant.signal_auto_cancel,
       },
-      assets: assets.map((item) => ({
+      resources: resources.map((item) => ({
         id: item.id,
         merchantId: item.merchant_id,
         name: item.name,
         description: item.description ?? undefined,
+        resourceType: item.resource_type,
         capacity: item.capacity,
         basePrice: Number(item.base_price),
         pricingType: item.pricing_type,
         durationMinutes: item.duration_minutes ?? undefined,
+        bufferBeforeMinutes: item.buffer_before_minutes,
+        bufferAfterMinutes: item.buffer_after_minutes,
+        photos: item.photos ?? [],
+        terms: item.terms ?? undefined,
         active: item.active,
       })),
     };
@@ -99,8 +123,15 @@ export const getMerchantProfile = api(
       pix_key: string;
       email: string | null;
       mercado_pago_access_token: string | null;
+      address: string | null;
+      city: string | null;
+      signal_percentage: number;
+      signal_deadline_minutes: number;
+      signal_auto_cancel: boolean;
     }>`
-      SELECT id, slug, business_name, niche, whatsapp_number, pix_key, email, mercado_pago_access_token
+      SELECT id, slug, business_name, niche, whatsapp_number, pix_key, email, 
+             mercado_pago_access_token, address, city,
+             signal_percentage, signal_deadline_minutes, signal_auto_cancel
       FROM merchants
       WHERE id = ${merchantId}
     `;
@@ -119,6 +150,11 @@ export const getMerchantProfile = api(
         pixKey: merchant.pix_key,
         email: merchant.email ?? undefined,
         mercadoPagoAccessToken: merchant.mercado_pago_access_token ?? undefined,
+        address: merchant.address ?? undefined,
+        city: merchant.city ?? undefined,
+        signalPercentage: merchant.signal_percentage,
+        signalDeadlineMinutes: merchant.signal_deadline_minutes,
+        signalAutoCancel: merchant.signal_auto_cancel,
       },
     };
   },
@@ -133,8 +169,12 @@ export const upsertMerchantProfile = api(
     }
 
     await db.exec`
-      INSERT INTO merchants (id, slug, business_name, niche, whatsapp_number, pix_key, email, mercado_pago_access_token)
-      VALUES (${parsed.data.id}, ${parsed.data.slug}, ${parsed.data.businessName}, ${parsed.data.niche}, ${parsed.data.whatsappNumber}, ${parsed.data.pixKey}, ${parsed.data.email ?? null}, ${parsed.data.mercadoPagoAccessToken ?? null})
+      INSERT INTO merchants (id, slug, business_name, niche, whatsapp_number, pix_key, email, 
+                             mercado_pago_access_token, address, city, signal_percentage, signal_deadline_minutes, signal_auto_cancel)
+      VALUES (${parsed.data.id}, ${parsed.data.slug}, ${parsed.data.businessName}, ${parsed.data.niche}, 
+              ${parsed.data.whatsappNumber}, ${parsed.data.pixKey}, ${parsed.data.email ?? null}, 
+              ${parsed.data.mercadoPagoAccessToken ?? null}, ${parsed.data.address ?? null}, ${parsed.data.city ?? null},
+              ${parsed.data.signalPercentage ?? 50}, ${parsed.data.signalDeadlineMinutes ?? 120}, ${parsed.data.signalAutoCancel ?? true})
       ON CONFLICT (id)
       DO UPDATE SET
         slug = EXCLUDED.slug,
@@ -144,7 +184,42 @@ export const upsertMerchantProfile = api(
         pix_key = EXCLUDED.pix_key,
         email = COALESCE(EXCLUDED.email, merchants.email),
         mercado_pago_access_token = COALESCE(EXCLUDED.mercado_pago_access_token, merchants.mercado_pago_access_token),
+        address = COALESCE(EXCLUDED.address, merchants.address),
+        city = COALESCE(EXCLUDED.city, merchants.city),
+        signal_percentage = COALESCE(EXCLUDED.signal_percentage, merchants.signal_percentage),
+        signal_deadline_minutes = COALESCE(EXCLUDED.signal_deadline_minutes, merchants.signal_deadline_minutes),
+        signal_auto_cancel = COALESCE(EXCLUDED.signal_auto_cancel, merchants.signal_auto_cancel),
         updated_at = now()
+    `;
+
+    return { ok: true };
+  },
+);
+
+export const updateSignalConfig = api(
+  { expose: true, method: "PATCH", path: "/merchant/:merchantId/signal-config" },
+  async ({ merchantId, signalPercentage, signalDeadlineMinutes, signalAutoCancel }: { 
+    merchantId: string; 
+    signalPercentage?: number;
+    signalDeadlineMinutes?: number;
+    signalAutoCancel?: boolean;
+  }) => {
+    const existing = await db.queryRow<{ id: string }>`
+      SELECT id FROM merchants WHERE id = ${merchantId}
+    `;
+
+    if (!existing) {
+      throw APIError.notFound("Merchant not found");
+    }
+
+    await db.exec`
+      UPDATE merchants
+      SET 
+        signal_percentage = COALESCE(${signalPercentage}, signal_percentage),
+        signal_deadline_minutes = COALESCE(${signalDeadlineMinutes}, signal_deadline_minutes),
+        signal_auto_cancel = COALESCE(${signalAutoCancel}, signal_auto_cancel),
+        updated_at = now()
+      WHERE id = ${merchantId}
     `;
 
     return { ok: true };
@@ -168,13 +243,10 @@ interface ClerkWebhookBody {
 export const clerkWebhook = api(
   { expose: true, method: "POST", path: "/webhooks/clerk" },
   async (body: ClerkWebhookBody) => {
-    const parsed = clerkWebhookSchema.safeParse(body);
-    if (!parsed.success) {
-      throw APIError.invalidArgument("Invalid webhook body", parsed.error);
-    }
+    const parsed = body;
 
-    if (parsed.data.type === "user.created") {
-      const { id, email_addresses, first_name, last_name } = parsed.data.data;
+    if (parsed.type === "user.created") {
+      const { id, email_addresses, first_name, last_name } = parsed.data;
       const email = email_addresses?.[0]?.email_address;
       const name = [first_name, last_name].filter(Boolean).join(" ") || "Meu Negócio";
 
@@ -196,16 +268,17 @@ export const clerkWebhook = api(
       }
 
       await db.exec`
-        INSERT INTO merchants (id, slug, business_name, niche, whatsapp_number, pix_key, email)
-        VALUES (${id}, ${slug}, ${name}, 'SERVICES', '', '', ${email ?? null})
+        INSERT INTO merchants (id, slug, business_name, niche, whatsapp_number, pix_key, email, 
+                               signal_percentage, signal_deadline_minutes, signal_auto_cancel)
+        VALUES (${id}, ${slug}, ${name}, 'SERVICES', '', '', ${email ?? null}, 50, 120, true)
       `;
 
       return { ok: true, created: true };
     }
 
-    if (parsed.data.type === "user.deleted") {
+    if (parsed.type === "user.deleted") {
       await db.exec`
-        DELETE FROM merchants WHERE id = ${parsed.data.data.id}
+        DELETE FROM merchants WHERE id = ${parsed.data.id}
       `;
       return { ok: true, deleted: true };
     }
@@ -217,154 +290,256 @@ export const clerkWebhook = api(
 export const getMerchantDashboardSummary = api(
   { expose: true, method: "GET", path: "/merchant/:merchantId/dashboard" },
   async ({ merchantId }: DashboardParams) => {
-    const today = await db.queryRow<{ bookings_today: number; month_revenue: number; pending_count: number }>`
+    const today = await db.queryRow<{ 
+      bookings_today: number; 
+      pending_today: number;
+      month_revenue: number; 
+      pending_count: number 
+    }>`
       SELECT
-        COUNT(*) FILTER (WHERE booking_date = CURRENT_DATE AND status = 'CONFIRMED')::int AS bookings_today,
+        COUNT(*) FILTER (WHERE booking_date = CURRENT_DATE AND status IN ('confirmed', 'in_progress'))::int AS bookings_today,
+        COUNT(*) FILTER (WHERE booking_date = CURRENT_DATE AND status = 'pending_payment')::int AS pending_today,
         COALESCE(SUM(deposit_amount) FILTER (
-          WHERE status = 'CONFIRMED'
+          WHERE status IN ('confirmed', 'completed')
             AND DATE_TRUNC('month', booking_date) = DATE_TRUNC('month', CURRENT_DATE)
         ), 0)::numeric AS month_revenue,
-        COUNT(*) FILTER (WHERE status = 'PENDING_PAYMENT')::int AS pending_count
+        COUNT(*) FILTER (WHERE status = 'pending_payment')::int AS pending_count
       FROM bookings
       WHERE merchant_id = ${merchantId}
     `;
 
-    const assetsCount = await db.queryRow<{ total: number; active: number }>`
+    const resourcesCount = await db.queryRow<{ total: number; active: number }>`
       SELECT
         COUNT(*)::int AS total,
         COUNT(*) FILTER (WHERE active = TRUE)::int AS active
-      FROM assets
+      FROM resources
       WHERE merchant_id = ${merchantId}
     `;
 
     return {
       bookingsToday: today?.bookings_today ?? 0,
+      pendingToday: today?.pending_today ?? 0,
       monthRevenue: Number(today?.month_revenue ?? 0),
       pendingBookings: today?.pending_count ?? 0,
-      totalAssets: assetsCount?.total ?? 0,
-      activeAssets: assetsCount?.active ?? 0,
+      totalResources: resourcesCount?.total ?? 0,
+      activeResources: resourcesCount?.active ?? 0,
     };
   },
 );
 
-// ============ ASSETS ============
+export const getTodaysBookings = api(
+  { expose: true, method: "GET", path: "/merchant/:merchantId/bookings/today" },
+  async ({ merchantId }: { merchantId: string }): Promise<{ bookings: Booking[] }> => {
+    const rows = await db.queryAll<{
+      id: string;
+      resource_id: string;
+      merchant_id: string;
+      customer_id: string | null;
+      customer_name: string;
+      customer_phone: string;
+      customer_email: string | null;
+      booking_date: Date;
+      start_time: string | null;
+      end_time: string | null;
+      people_count: number;
+      status: Booking["status"];
+      deposit_amount: number;
+      total_amount: number;
+      payment_id: string | null;
+      notes: string | null;
+      internal_notes: string | null;
+    }>`
+      SELECT id, resource_id, merchant_id, customer_id, customer_name, customer_phone, customer_email,
+             booking_date, start_time, end_time, people_count, status, deposit_amount, total_amount,
+             payment_id, notes, internal_notes
+      FROM bookings
+      WHERE merchant_id = ${merchantId} AND booking_date = CURRENT_DATE
+      ORDER BY start_time ASC NULLS LAST
+    `;
 
-interface ListAssetsParams {
+    return {
+      bookings: rows.map((row) => ({
+        id: row.id,
+        resourceId: row.resource_id,
+        merchantId: row.merchant_id,
+        customerId: row.customer_id ?? undefined,
+        customerName: row.customer_name,
+        customerPhone: row.customer_phone,
+        customerEmail: row.customer_email ?? undefined,
+        bookingDate: row.booking_date.toISOString().split('T')[0],
+        startTime: row.start_time ?? undefined,
+        endTime: row.end_time ?? undefined,
+        peopleCount: row.people_count,
+        status: row.status,
+        depositAmount: Number(row.deposit_amount),
+        totalAmount: Number(row.total_amount),
+        paymentId: row.payment_id,
+        notes: row.notes ?? undefined,
+        internalNotes: row.internal_notes ?? undefined,
+      })),
+    };
+  },
+);
+
+// ============ RESOURCE TEMPLATES ============
+
+export const getResourceTemplates = api(
+  { expose: true, method: "GET", path: "/resource-templates" },
+  async (): Promise<{ templates: typeof resourceTemplates }> => {
+    return { templates: resourceTemplates };
+  },
+);
+
+// ============ RESOURCES ============
+
+interface ListResourcesParams {
   merchantId: string;
 }
 
-interface CreateAssetBody {
+interface CreateResourceBody {
   merchantId: string;
   name: string;
   description?: string;
+  resourceType: Resource["resourceType"];
   capacity: number;
   basePrice: number;
-  pricingType: "FULL_DAY" | "HOURLY";
+  pricingType: Resource["pricingType"];
   durationMinutes?: number;
+  bufferBeforeMinutes?: number;
+  bufferAfterMinutes?: number;
+  photos?: string[];
+  terms?: string;
   active?: boolean;
 }
 
-interface UpdateAssetParams {
-  assetId: string;
+interface UpdateResourceParams {
+  resourceId: string;
 }
 
-interface UpdateAssetBody {
+interface UpdateResourceBody {
   name?: string;
   description?: string;
+  resourceType?: Resource["resourceType"];
   capacity?: number;
   basePrice?: number;
-  pricingType?: "FULL_DAY" | "HOURLY";
+  pricingType?: Resource["pricingType"];
   durationMinutes?: number;
+  bufferBeforeMinutes?: number;
+  bufferAfterMinutes?: number;
+  photos?: string[];
+  terms?: string;
   active?: boolean;
 }
 
-interface DeleteAssetParams {
-  assetId: string;
+interface DeleteResourceParams {
+  resourceId: string;
 }
 
-interface GetAssetParams {
-  assetId: string;
+interface GetResourceParams {
+  resourceId: string;
 }
 
-export const listMerchantAssets = api(
-  { expose: true, method: "GET", path: "/merchant/:merchantId/assets" },
-  async ({ merchantId }: ListAssetsParams): Promise<{ assets: Asset[] }> => {
+export const listMerchantResources = api(
+  { expose: true, method: "GET", path: "/merchant/:merchantId/resources" },
+  async ({ merchantId }: ListResourcesParams): Promise<{ resources: Resource[] }> => {
     const rows = await db.queryAll<{
       id: string;
       merchant_id: string;
       name: string;
       description: string | null;
+      resource_type: Resource["resourceType"];
       capacity: number;
       base_price: number;
-      pricing_type: Asset["pricingType"];
+      pricing_type: Resource["pricingType"];
       duration_minutes: number | null;
+      buffer_before_minutes: number;
+      buffer_after_minutes: number;
+      photos: string[];
+      terms: string | null;
       active: boolean;
     }>`
-      SELECT id, merchant_id, name, description, capacity, base_price, pricing_type, duration_minutes, active
-      FROM assets
+      SELECT id, merchant_id, name, description, resource_type, capacity, base_price, pricing_type, 
+             duration_minutes, buffer_before_minutes, buffer_after_minutes, photos, terms, active
+      FROM resources
       WHERE merchant_id = ${merchantId}
       ORDER BY created_at DESC
     `;
 
     return {
-      assets: rows.map((row) => ({
+      resources: rows.map((row) => ({
         id: row.id,
         merchantId: row.merchant_id,
         name: row.name,
         description: row.description ?? undefined,
+        resourceType: row.resource_type,
         capacity: row.capacity,
         basePrice: Number(row.base_price),
         pricingType: row.pricing_type,
         durationMinutes: row.duration_minutes ?? undefined,
+        bufferBeforeMinutes: row.buffer_before_minutes,
+        bufferAfterMinutes: row.buffer_after_minutes,
+        photos: row.photos ?? [],
+        terms: row.terms ?? undefined,
         active: row.active,
       })),
     };
   },
 );
 
-export const getAsset = api(
-  { expose: true, method: "GET", path: "/asset/:assetId" },
-  async ({ assetId }: GetAssetParams): Promise<{ asset: Asset }> => {
+export const getResource = api(
+  { expose: true, method: "GET", path: "/resource/:resourceId" },
+  async ({ resourceId }: GetResourceParams): Promise<{ resource: Resource }> => {
     const row = await db.queryRow<{
       id: string;
       merchant_id: string;
       name: string;
       description: string | null;
+      resource_type: Resource["resourceType"];
       capacity: number;
       base_price: number;
-      pricing_type: Asset["pricingType"];
+      pricing_type: Resource["pricingType"];
       duration_minutes: number | null;
+      buffer_before_minutes: number;
+      buffer_after_minutes: number;
+      photos: string[];
+      terms: string | null;
       active: boolean;
     }>`
-      SELECT id, merchant_id, name, description, capacity, base_price, pricing_type, duration_minutes, active
-      FROM assets
-      WHERE id = ${assetId}
+      SELECT id, merchant_id, name, description, resource_type, capacity, base_price, pricing_type, 
+             duration_minutes, buffer_before_minutes, buffer_after_minutes, photos, terms, active
+      FROM resources
+      WHERE id = ${resourceId}
     `;
 
     if (!row) {
-      throw APIError.notFound("Asset not found");
+      throw APIError.notFound("Resource not found");
     }
 
     return {
-      asset: {
+      resource: {
         id: row.id,
         merchantId: row.merchant_id,
         name: row.name,
         description: row.description ?? undefined,
+        resourceType: row.resource_type,
         capacity: row.capacity,
         basePrice: Number(row.base_price),
         pricingType: row.pricing_type,
         durationMinutes: row.duration_minutes ?? undefined,
+        bufferBeforeMinutes: row.buffer_before_minutes,
+        bufferAfterMinutes: row.buffer_after_minutes,
+        photos: row.photos ?? [],
+        terms: row.terms ?? undefined,
         active: row.active,
       },
     };
   },
 );
 
-export const createAsset = api(
-  { expose: true, method: "POST", path: "/asset" },
-  async (body: CreateAssetBody): Promise<{ asset: Asset }> => {
-    const parsed = createAssetSchema.safeParse(body);
+export const createResource = api(
+  { expose: true, method: "POST", path: "/resource" },
+  async (body: CreateResourceBody): Promise<{ resource: Resource }> => {
+    const parsed = createResourceSchema.safeParse(body);
     if (!parsed.success) {
       throw APIError.invalidArgument("Invalid request body", parsed.error);
     }
@@ -377,67 +552,84 @@ export const createAsset = api(
       throw APIError.notFound("Merchant not found");
     }
 
-    const assetId = randomUUID();
+    const resourceId = randomUUID();
 
     await db.exec`
-      INSERT INTO assets (id, merchant_id, name, description, capacity, base_price, pricing_type, duration_minutes, active)
+      INSERT INTO resources (id, merchant_id, name, description, resource_type, capacity, base_price, 
+                            pricing_type, duration_minutes, buffer_before_minutes, buffer_after_minutes, 
+                            photos, terms, active)
       VALUES (
-        ${assetId},
+        ${resourceId},
         ${parsed.data.merchantId},
         ${parsed.data.name},
         ${parsed.data.description ?? null},
+        ${parsed.data.resourceType},
         ${parsed.data.capacity},
         ${parsed.data.basePrice},
         ${parsed.data.pricingType},
         ${parsed.data.durationMinutes ?? null},
+        ${parsed.data.bufferBeforeMinutes ?? 0},
+        ${parsed.data.bufferAfterMinutes ?? 0},
+        ${parsed.data.photos ?? []},
+        ${parsed.data.terms ?? null},
         ${parsed.data.active ?? true}
       )
     `;
 
     return {
-      asset: {
-        id: assetId,
+      resource: {
+        id: resourceId,
         merchantId: parsed.data.merchantId,
         name: parsed.data.name,
         description: parsed.data.description,
+        resourceType: parsed.data.resourceType,
         capacity: parsed.data.capacity,
         basePrice: parsed.data.basePrice,
         pricingType: parsed.data.pricingType,
         durationMinutes: parsed.data.durationMinutes,
+        bufferBeforeMinutes: parsed.data.bufferBeforeMinutes ?? 0,
+        bufferAfterMinutes: parsed.data.bufferAfterMinutes ?? 0,
+        photos: parsed.data.photos ?? [],
+        terms: parsed.data.terms,
         active: parsed.data.active ?? true,
       },
     };
   },
 );
 
-export const updateAsset = api(
-  { expose: true, method: "PATCH", path: "/asset/:assetId" },
-  async ({ assetId, ...body }: UpdateAssetParams & UpdateAssetBody): Promise<{ asset: Asset }> => {
-    const parsed = updateAssetSchema.safeParse(body);
+export const updateResource = api(
+  { expose: true, method: "PATCH", path: "/resource/:resourceId" },
+  async ({ resourceId, ...body }: UpdateResourceParams & UpdateResourceBody): Promise<{ resource: Resource }> => {
+    const parsed = updateResourceSchema.safeParse(body);
     if (!parsed.success) {
       throw APIError.invalidArgument("Invalid request body", parsed.error);
     }
 
     const existing = await db.queryRow<{ id: string }>`
-      SELECT id FROM assets WHERE id = ${assetId}
+      SELECT id FROM resources WHERE id = ${resourceId}
     `;
 
     if (!existing) {
-      throw APIError.notFound("Asset not found");
+      throw APIError.notFound("Resource not found");
     }
 
     await db.exec`
-      UPDATE assets
+      UPDATE resources
       SET 
         name = COALESCE(${parsed.data.name}, name),
         description = COALESCE(${parsed.data.description}, description),
+        resource_type = COALESCE(${parsed.data.resourceType}, resource_type),
         capacity = COALESCE(${parsed.data.capacity}, capacity),
         base_price = COALESCE(${parsed.data.basePrice}, base_price),
         pricing_type = COALESCE(${parsed.data.pricingType}, pricing_type),
         duration_minutes = COALESCE(${parsed.data.durationMinutes}, duration_minutes),
+        buffer_before_minutes = COALESCE(${parsed.data.bufferBeforeMinutes}, buffer_before_minutes),
+        buffer_after_minutes = COALESCE(${parsed.data.bufferAfterMinutes}, buffer_after_minutes),
+        photos = COALESCE(${parsed.data.photos}, photos),
+        terms = COALESCE(${parsed.data.terms}, terms),
         active = COALESCE(${parsed.data.active}, active),
         updated_at = now()
-      WHERE id = ${assetId}
+      WHERE id = ${resourceId}
     `;
 
     const row = await db.queryRow<{
@@ -445,49 +637,399 @@ export const updateAsset = api(
       merchant_id: string;
       name: string;
       description: string | null;
+      resource_type: Resource["resourceType"];
       capacity: number;
       base_price: number;
-      pricing_type: Asset["pricingType"];
+      pricing_type: Resource["pricingType"];
       duration_minutes: number | null;
+      buffer_before_minutes: number;
+      buffer_after_minutes: number;
+      photos: string[];
+      terms: string | null;
       active: boolean;
     }>`
-      SELECT id, merchant_id, name, description, capacity, base_price, pricing_type, duration_minutes, active
-      FROM assets
-      WHERE id = ${assetId}
+      SELECT id, merchant_id, name, description, resource_type, capacity, base_price, pricing_type, 
+             duration_minutes, buffer_before_minutes, buffer_after_minutes, photos, terms, active
+      FROM resources
+      WHERE id = ${resourceId}
     `;
 
     return {
-      asset: {
+      resource: {
         id: row!.id,
         merchantId: row!.merchant_id,
         name: row!.name,
         description: row!.description ?? undefined,
+        resourceType: row!.resource_type,
         capacity: row!.capacity,
         basePrice: Number(row!.base_price),
         pricingType: row!.pricing_type,
         durationMinutes: row!.duration_minutes ?? undefined,
+        bufferBeforeMinutes: row!.buffer_before_minutes,
+        bufferAfterMinutes: row!.buffer_after_minutes,
+        photos: row!.photos ?? [],
+        terms: row!.terms ?? undefined,
         active: row!.active,
       },
     };
   },
 );
 
-export const deleteAsset = api(
-  { expose: true, method: "DELETE", path: "/asset/:assetId" },
-  async ({ assetId }: DeleteAssetParams): Promise<{ ok: boolean }> => {
+export const deleteResource = api(
+  { expose: true, method: "DELETE", path: "/resource/:resourceId" },
+  async ({ resourceId }: DeleteResourceParams): Promise<{ ok: boolean }> => {
     const existing = await db.queryRow<{ id: string }>`
-      SELECT id FROM assets WHERE id = ${assetId}
+      SELECT id FROM resources WHERE id = ${resourceId}
     `;
 
     if (!existing) {
-      throw APIError.notFound("Asset not found");
+      throw APIError.notFound("Resource not found");
     }
 
     await db.exec`
-      UPDATE assets SET active = FALSE, updated_at = now() WHERE id = ${assetId}
+      UPDATE resources SET active = FALSE, updated_at = now() WHERE id = ${resourceId}
     `;
 
     return { ok: true };
+  },
+);
+
+// ============ AVAILABILITY RULES ============
+
+interface ListAvailabilityParams {
+  resourceId: string;
+}
+
+interface CreateAvailabilityBody {
+  resourceId: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  slotDurationMinutes?: number;
+  bufferBeforeMinutes?: number;
+  bufferAfterMinutes?: number;
+}
+
+export const listAvailabilityRules = api(
+  { expose: true, method: "GET", path: "/resource/:resourceId/availability" },
+  async ({ resourceId }: ListAvailabilityParams): Promise<{ rules: AvailabilityRule[] }> => {
+    const rows = await db.queryAll<{
+      id: string;
+      resource_id: string;
+      day_of_week: number;
+      start_time: string;
+      end_time: string;
+      slot_duration_minutes: number;
+      buffer_before_minutes: number;
+      buffer_after_minutes: number;
+    }>`
+      SELECT id, resource_id, day_of_week, start_time, end_time, 
+             slot_duration_minutes, buffer_before_minutes, buffer_after_minutes
+      FROM availability_rules
+      WHERE resource_id = ${resourceId}
+      ORDER BY day_of_week, start_time
+    `;
+
+    return {
+      rules: rows.map((row) => ({
+        id: row.id,
+        resourceId: row.resource_id,
+        dayOfWeek: row.day_of_week,
+        startTime: row.start_time,
+        endTime: row.end_time,
+        slotDurationMinutes: row.slot_duration_minutes,
+        bufferBeforeMinutes: row.buffer_before_minutes,
+        bufferAfterMinutes: row.buffer_after_minutes,
+      })),
+    };
+  },
+);
+
+export const createAvailabilityRule = api(
+  { expose: true, method: "POST", path: "/availability-rule" },
+  async (body: CreateAvailabilityBody): Promise<{ rule: AvailabilityRule }> => {
+    const parsed = createAvailabilityRuleSchema.safeParse(body);
+    if (!parsed.success) {
+      throw APIError.invalidArgument("Invalid request body", parsed.error);
+    }
+
+    const ruleId = randomUUID();
+
+    await db.exec`
+      INSERT INTO availability_rules (id, resource_id, day_of_week, start_time, end_time, 
+                                       slot_duration_minutes, buffer_before_minutes, buffer_after_minutes)
+      VALUES (
+        ${ruleId},
+        ${parsed.data.resourceId},
+        ${parsed.data.dayOfWeek},
+        ${parsed.data.startTime},
+        ${parsed.data.endTime},
+        ${parsed.data.slotDurationMinutes ?? 60},
+        ${parsed.data.bufferBeforeMinutes ?? 0},
+        ${parsed.data.bufferAfterMinutes ?? 0}
+      )
+      ON CONFLICT (resource_id, day_of_week, start_time)
+      DO UPDATE SET
+        end_time = EXCLUDED.end_time,
+        slot_duration_minutes = EXCLUDED.slot_duration_minutes,
+        buffer_before_minutes = EXCLUDED.buffer_before_minutes,
+        buffer_after_minutes = EXCLUDED.buffer_after_minutes,
+        updated_at = now()
+    `;
+
+    return {
+      rule: {
+        id: ruleId,
+        resourceId: parsed.data.resourceId,
+        dayOfWeek: parsed.data.dayOfWeek,
+        startTime: parsed.data.startTime,
+        endTime: parsed.data.endTime,
+        slotDurationMinutes: parsed.data.slotDurationMinutes ?? 60,
+        bufferBeforeMinutes: parsed.data.bufferBeforeMinutes ?? 0,
+        bufferAfterMinutes: parsed.data.bufferAfterMinutes ?? 0,
+      },
+    };
+  },
+);
+
+export const deleteAvailabilityRule = api(
+  { expose: true, method: "DELETE", path: "/availability-rule/:ruleId" },
+  async ({ ruleId }: { ruleId: string }): Promise<{ ok: boolean }> => {
+    await db.exec`
+      DELETE FROM availability_rules WHERE id = ${ruleId}
+    `;
+
+    return { ok: true };
+  },
+);
+
+export const setAvailabilityRules = api(
+  { expose: true, method: "POST", path: "/resource/:resourceId/availability/set" },
+  async ({ resourceId, rules }: { resourceId: string; rules: CreateAvailabilityBody[] }): Promise<{ ok: boolean }> => {
+    await db.exec`
+      DELETE FROM availability_rules WHERE resource_id = ${resourceId}
+    `;
+
+    for (const rule of rules) {
+      const ruleId = randomUUID();
+      await db.exec`
+        INSERT INTO availability_rules (id, resource_id, day_of_week, start_time, end_time, 
+                                         slot_duration_minutes, buffer_before_minutes, buffer_after_minutes)
+        VALUES (
+          ${ruleId},
+          ${resourceId},
+          ${rule.dayOfWeek},
+          ${rule.startTime},
+          ${rule.endTime},
+          ${rule.slotDurationMinutes ?? 60},
+          ${rule.bufferBeforeMinutes ?? 0},
+          ${rule.bufferAfterMinutes ?? 0}
+        )
+      `;
+    }
+
+    return { ok: true };
+  },
+);
+
+// ============ BLOCKS ============
+
+interface ListBlocksParams {
+  resourceId: string;
+}
+
+interface CreateBlockBody {
+  resourceId: string;
+  startTime: string;
+  endTime: string;
+  reason: Block["reason"];
+  notes?: string;
+  recurring?: Block["recurring"];
+}
+
+export const listBlocks = api(
+  { expose: true, method: "GET", path: "/resource/:resourceId/blocks" },
+  async ({ resourceId }: ListBlocksParams): Promise<{ blocks: Block[] }> => {
+    const rows = await db.queryAll<{
+      id: string;
+      resource_id: string;
+      start_time: Date;
+      end_time: Date;
+      reason: Block["reason"];
+      notes: string | null;
+      recurring: Block["recurring"] | null;
+    }>`
+      SELECT id, resource_id, start_time, end_time, reason, notes, recurring
+      FROM blocks
+      WHERE resource_id = ${resourceId} AND end_time > now()
+      ORDER BY start_time ASC
+    `;
+
+    return {
+      blocks: rows.map((row) => ({
+        id: row.id,
+        resourceId: row.resource_id,
+        startTime: row.start_time.toISOString(),
+        endTime: row.end_time.toISOString(),
+        reason: row.reason,
+        notes: row.notes ?? undefined,
+        recurring: row.recurring ?? undefined,
+      })),
+    };
+  },
+);
+
+export const createBlock = api(
+  { expose: true, method: "POST", path: "/block" },
+  async (body: CreateBlockBody): Promise<{ block: Block }> => {
+    const parsed = createBlockSchema.safeParse(body);
+    if (!parsed.success) {
+      throw APIError.invalidArgument("Invalid request body", parsed.error);
+    }
+
+    const blockId = randomUUID();
+
+    await db.exec`
+      INSERT INTO blocks (id, resource_id, start_time, end_time, reason, notes, recurring)
+      VALUES (
+        ${blockId},
+        ${parsed.data.resourceId},
+        ${parsed.data.startTime},
+        ${parsed.data.endTime},
+        ${parsed.data.reason},
+        ${parsed.data.notes ?? null},
+        ${JSON.stringify(parsed.data.recurring) ?? null}
+      )
+    `;
+
+    return {
+      block: {
+        id: blockId,
+        resourceId: parsed.data.resourceId,
+        startTime: parsed.data.startTime,
+        endTime: parsed.data.endTime,
+        reason: parsed.data.reason,
+        notes: parsed.data.notes,
+        recurring: parsed.data.recurring,
+      },
+    };
+  },
+);
+
+export const deleteBlock = api(
+  { expose: true, method: "DELETE", path: "/block/:blockId" },
+  async ({ blockId }: { blockId: string }): Promise<{ ok: boolean }> => {
+    await db.exec`
+      DELETE FROM blocks WHERE id = ${blockId}
+    `;
+
+    return { ok: true };
+  },
+);
+
+// ============ AVAILABILITY CHECK ============
+
+interface GetAvailableSlotsParams {
+  resourceId: string;
+  date: string;
+}
+
+export const getAvailableSlots = api(
+  { expose: true, method: "GET", path: "/resource/:resourceId/slots/:date" },
+  async ({ resourceId, date }: GetAvailableSlotsParams): Promise<{ slots: TimeSlot[] }> => {
+    const resource = await db.queryRow<{
+      id: string;
+      duration_minutes: number | null;
+      buffer_before_minutes: number;
+      buffer_after_minutes: number;
+    }>`
+      SELECT id, duration_minutes, buffer_before_minutes, buffer_after_minutes
+      FROM resources
+      WHERE id = ${resourceId} AND active = TRUE
+    `;
+
+    if (!resource) {
+      throw APIError.notFound("Resource not found or inactive");
+    }
+
+    const dateObj = new Date(date + "T00:00:00");
+    const dayOfWeek = dateObj.getDay();
+
+    const rules = await db.queryAll<{
+      start_time: string;
+      end_time: string;
+      slot_duration_minutes: number;
+    }>`
+      SELECT start_time, end_time, slot_duration_minutes
+      FROM availability_rules
+      WHERE resource_id = ${resourceId} AND day_of_week = ${dayOfWeek}
+    `;
+
+    if (rules.length === 0) {
+      return { slots: [] };
+    }
+
+    const bookings = await db.queryAll<{
+      start_time: string | null;
+      end_time: string | null;
+    }>`
+      SELECT start_time, end_time
+      FROM bookings
+      WHERE resource_id = ${resourceId} 
+        AND booking_date = ${date}
+        AND status NOT IN ('cancelled', 'no_show')
+    `;
+
+    const blocks = await db.queryAll<{
+      start_time: Date;
+      end_time: Date;
+    }>`
+      SELECT start_time, end_time
+      FROM blocks
+      WHERE resource_id = ${resourceId}
+        AND start_time < ${date + "T23:59:59"}::timestamptz
+        AND end_time > ${date + "T00:00:00"}::timestamptz
+    `;
+
+    const slots: TimeSlot[] = [];
+
+    for (const rule of rules) {
+      const slotDuration = rule.slot_duration_minutes;
+      const [startH, startM] = rule.start_time.split(":").map(Number);
+      const [endH, endM] = rule.end_time.split(":").map(Number);
+
+      let currentMinutes = startH * 60 + startM;
+      const endMinutes = endH * 60 + endM;
+
+      while (currentMinutes + slotDuration <= endMinutes) {
+        const slotStart = `${String(Math.floor(currentMinutes / 60)).padStart(2, "0")}:${String(currentMinutes % 60).padStart(2, "0")}`;
+        const slotEndMinutes = currentMinutes + slotDuration;
+        const slotEnd = `${String(Math.floor(slotEndMinutes / 60)).padStart(2, "0")}:${String(slotEndMinutes % 60).padStart(2, "0")}`;
+
+        const isBlocked = blocks.some((b) => {
+          const blockStart = b.start_time.toISOString();
+          const blockEnd = b.end_time.toISOString();
+          const slotStartISO = `${date}T${slotStart}:00`;
+          const slotEndISO = `${date}T${slotEnd}:00`;
+          return slotStartISO < blockEnd && slotEndISO > blockStart;
+        });
+
+        const isBooked = bookings.some((b) => {
+          if (!b.start_time || !b.end_time) return false;
+          return b.start_time <= slotStart && b.end_time >= slotEnd;
+        });
+
+        slots.push({
+          startTime: slotStart,
+          endTime: slotEnd,
+          available: !isBlocked && !isBooked,
+        });
+
+        currentMinutes += slotDuration;
+      }
+    }
+
+    return { slots: slots.sort((a, b) => a.startTime.localeCompare(b.startTime)) };
   },
 );
 
@@ -519,11 +1061,11 @@ export const createPayment = api(
       customer_phone: string;
       customer_email: string | null;
       deposit_amount: number;
-      asset_id: string;
+      resource_id: string;
       booking_date: Date;
       start_time: string | null;
     }>`
-      SELECT id, merchant_id, customer_name, customer_phone, customer_email, deposit_amount, asset_id, booking_date, start_time
+      SELECT id, merchant_id, customer_name, customer_phone, customer_email, deposit_amount, resource_id, booking_date, start_time
       FROM bookings
       WHERE id = ${body.bookingId}
     `;
@@ -621,7 +1163,7 @@ export const paymentWebhook = api(
 
           await db.exec`
             UPDATE bookings
-            SET status = 'CONFIRMED', updated_at = now()
+            SET status = 'confirmed', updated_at = now()
             WHERE id = ${payment.booking_id}
           `;
         } else if (status === "rejected" || status === "cancelled") {
@@ -633,7 +1175,7 @@ export const paymentWebhook = api(
 
           await db.exec`
             UPDATE bookings
-            SET status = 'CANCELLED', updated_at = now()
+            SET status = 'cancelled', updated_at = now()
             WHERE id = ${payment.booking_id}
           `;
         }

@@ -67,7 +67,7 @@ export function Hero() {
               />
             </div>
           </div>
-          <div className="absolute -inset-4 -z-10 bg-gradient-to-r from-blue-500/20 via-cyan-400/20 to-yellow-400/20 opacity-50 blur-3xl" />
+          <div className="absolute -inset-4 -z-10 bg-gradient-to-r from-blue-500/20 via-cyan-400/20 to-blue-400/20 opacity-50 blur-3xl" />
         </div>
       </div>
     </section>

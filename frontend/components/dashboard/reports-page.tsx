@@ -231,7 +231,7 @@ export function ReportsPage({ merchantId }: ReportsPageProps) {
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="h-3 w-3 rounded-full bg-yellow-500" />
+                  <div className="h-3 w-3 rounded-full bg-cyan-500" />
                   <span className="text-sm">Aguardando Pagamento</span>
                 </div>
                 <span className="font-medium">{pendingBookings}</span>
@@ -254,7 +254,7 @@ export function ReportsPage({ merchantId }: ReportsPageProps) {
                     style={{ width: `${(confirmedBookings / filteredBookings.length) * 100}%` }}
                   />
                   <div
-                    className="bg-yellow-500"
+                    className="bg-cyan-500"
                     style={{ width: `${(pendingBookings / filteredBookings.length) * 100}%` }}
                   />
                   <div

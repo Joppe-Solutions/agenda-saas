@@ -36,8 +36,8 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
             <ul className="space-y-4">
               {features.map((feature) => (
                 <li key={feature} className="flex items-center gap-3">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-yellow-500/20">
-                    <CheckCircle2 className="h-4 w-4 text-yellow-400" />
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-500/20">
+                    <CheckCircle2 className="h-4 w-4 text-cyan-400" />
                   </div>
                   <span className="text-white/80">{feature}</span>
                 </li>

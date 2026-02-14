@@ -84,7 +84,7 @@ export function Sidebar() {
             </p>
             <Link
               href="/dashboard/upgrade"
-              className="mt-3 inline-block text-xs font-semibold text-yellow-400 hover:text-yellow-300"
+              className="mt-3 inline-block text-xs font-semibold text-cyan-400 hover:text-cyan-300"
             >
               Fazer upgrade
             </Link>

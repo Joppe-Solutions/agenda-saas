@@ -34,15 +34,15 @@ export default async function DashboardBookingsPage() {
           </p>
         </div>
 
-        <Card className="border-yellow-200 bg-yellow-50">
+        <Card className="border-cyan-200 bg-cyan-50 dark:border-cyan-800 dark:bg-cyan-900/20">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100">
-                <AlertTriangle className="h-5 w-5 text-yellow-600" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-100 dark:bg-cyan-800">
+                <AlertTriangle className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
               </div>
               <div>
-                <CardTitle className="text-yellow-800">Não foi possível carregar as reservas</CardTitle>
-                <CardDescription className="text-yellow-700">
+                <CardTitle className="text-cyan-800 dark:text-cyan-300">Não foi possível carregar as reservas</CardTitle>
+                <CardDescription className="text-cyan-700 dark:text-cyan-400">
                   O servidor backend não está respondendo
                 </CardDescription>
               </div>
@@ -63,9 +63,13 @@ export default async function DashboardBookingsPage() {
     );
   }
 
+  const confirmedCount = bookings.filter(b => b.status === "confirmed").length;
+  const pendingCount = bookings.filter(b => b.status === "pending_payment").length;
+  const cancelledCount = bookings.filter(b => b.status === "cancelled").length;
+  const inProgressCount = bookings.filter(b => b.status === "in_progress").length;
+
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Reservas</h1>
@@ -75,14 +79,10 @@ export default async function DashboardBookingsPage() {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm">
-            <Filter className="mr-2 h-4 w-4" />
-            Filtrar
-          </Button>
-          <Button variant="outline" size="sm">
             <Download className="mr-2 h-4 w-4" />
             Exportar
           </Button>
-          <Button size="sm" asChild>
+          <Button size="sm" className="bg-brand-yellow hover:bg-brand-yellow/90 text-brand-blue-950" asChild>
             <Link href="/dashboard/bookings/new">
               <Plus className="mr-2 h-4 w-4" />
               Nova Reserva
@@ -91,32 +91,36 @@ export default async function DashboardBookingsPage() {
         </div>
       </div>
 
-      {/* Stats bar */}
       <div className="flex flex-wrap gap-4 rounded-lg border bg-card p-4">
         <div className="flex items-center gap-2">
           <div className="h-2 w-2 rounded-full bg-green-500" />
           <span className="text-sm text-muted-foreground">
-            {bookings.filter((b) => b.status === "CONFIRMED").length} confirmadas
+            {confirmedCount} confirmada{confirmedCount !== 1 ? 's' : ''}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="h-2 w-2 rounded-full bg-blue-500" />
+          <span className="text-sm text-muted-foreground">
+            {inProgressCount} em andamento
           </span>
         </div>
         <div className="flex items-center gap-2">
           <div className="h-2 w-2 rounded-full bg-yellow-500" />
           <span className="text-sm text-muted-foreground">
-            {bookings.filter((b) => b.status === "PENDING_PAYMENT").length} aguardando
+            {pendingCount} aguardando sinal
           </span>
         </div>
         <div className="flex items-center gap-2">
           <div className="h-2 w-2 rounded-full bg-red-500" />
           <span className="text-sm text-muted-foreground">
-            {bookings.filter((b) => b.status === "CANCELLED").length} canceladas
+            {cancelledCount} cancelada{cancelledCount !== 1 ? 's' : ''}
           </span>
         </div>
         <div className="ml-auto text-sm font-medium">
-          Total: {bookings.length} reservas
+          Total: {bookings.length} reserva{bookings.length !== 1 ? 's' : ''}
         </div>
       </div>
 
-      {/* Table */}
       <ReservationsTable initialBookings={bookings} merchantId={userId} />
     </div>
   );

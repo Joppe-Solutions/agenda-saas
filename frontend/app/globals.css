@@ -10,23 +10,23 @@
     --card-foreground: 217 62% 9%;
     --popover: 0 0% 100%;
     --popover-foreground: 217 62% 9%;
-    --primary: 224 71% 29%;
+    --primary: 197 100% 45%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 215 20% 96%;
+    --secondary: 197 50% 92%;
     --secondary-foreground: 217 62% 9%;
     --muted: 210 40% 98%;
     --muted-foreground: 215 16% 47%;
-    --accent: 45 100% 50%;
-    --accent-foreground: 224 71% 18%;
+    --accent: 197 100% 45%;
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
     --border: 213 28% 91%;
     --input: 213 28% 91%;
     --ring: 197 100% 45%;
     --radius: 0.75rem;
-    --chart-1: 224 71% 29%;
-    --chart-2: 197 100% 45%;
-    --chart-3: 45 100% 50%;
+    --chart-1: 197 100% 45%;
+    --chart-2: 221 85% 63%;
+    --chart-3: 222 92% 73%;
     --chart-4: 142 71% 45%;
     --chart-5: 215 16% 65%;
     
@@ -70,8 +70,8 @@
     --success: 142 71% 45%;
     --success-bg: 142 76% 94%;
     --success-fg: 142 64% 20%;
-    --warning: 38 92% 50%;
-    --warning-bg: 45 96% 90%;
+    --warning: 25 95% 53%;
+    --warning-bg: 30 100% 92%;
     --warning-fg: 20 77% 26%;
     --danger: 0 72% 51%;
     --danger-bg: 0 86% 94%;
@@ -88,21 +88,21 @@
     --card-foreground: 210 40% 98%;
     --popover: 228 73% 24%;
     --popover-foreground: 210 40% 98%;
-    --primary: 45 100% 50%;
-    --primary-foreground: 224 75% 18%;
+    --primary: 197 100% 50%;
+    --primary-foreground: 224 75% 10%;
     --secondary: 224 71% 29%;
     --secondary-foreground: 210 40% 98%;
     --muted: 228 73% 24%;
     --muted-foreground: 213 16% 77%;
     --accent: 197 100% 45%;
-    --accent-foreground: 224 75% 18%;
+    --accent-foreground: 224 75% 10%;
     --destructive: 0 91% 71%;
     --destructive-foreground: 224 75% 18%;
     --border: 226 70% 40%;
     --input: 226 70% 40%;
-    --ring: 197 100% 45%;
-    --chart-1: 45 100% 50%;
-    --chart-2: 197 100% 45%;
+    --ring: 197 100% 50%;
+    --chart-1: 197 100% 50%;
+    --chart-2: 221 85% 63%;
     --chart-3: 222 92% 73%;
     --chart-4: 142 71% 50%;
     --chart-5: 213 16% 77%;
@@ -110,9 +110,9 @@
     --success: 142 71% 50%;
     --success-bg: 142 50% 15%;
     --success-fg: 142 70% 85%;
-    --warning: 42 100% 50%;
-    --warning-bg: 38 50% 15%;
-    --warning-fg: 42 80% 85%;
+    --warning: 25 95% 60%;
+    --warning-bg: 25 50% 15%;
+    --warning-fg: 25 80% 85%;
     --danger: 0 91% 71%;
     --danger-bg: 0 50% 15%;
     --danger-fg: 0 80% 85%;
@@ -167,7 +167,7 @@
       radial-gradient(at 40% 20%, hsl(var(--brand-blue-500) / 0.1) 0px, transparent 50%),
       radial-gradient(at 80% 0%, hsl(var(--brand-cyan-400) / 0.08) 0px, transparent 50%),
       radial-gradient(at 0% 50%, hsl(var(--brand-blue-600) / 0.06) 0px, transparent 50%),
-      radial-gradient(at 80% 50%, hsl(var(--brand-yellow-400) / 0.05) 0px, transparent 50%),
+      radial-gradient(at 80% 50%, hsl(var(--brand-cyan-500) / 0.05) 0px, transparent 50%),
       radial-gradient(at 0% 100%, hsl(var(--brand-blue-500) / 0.07) 0px, transparent 50%),
       hsl(var(--background));
   }
@@ -204,6 +204,6 @@
     @apply bg-[#FEE2E2] text-[#7F1D1D] dark:bg-[#7F1D1D] dark:text-[#FECACA];
   }
   .badge-highlight {
-    @apply bg-[#FFEFB8] text-[#3D2600] dark:bg-[#664100] dark:text-[#FFE27A];
+    @apply bg-[#CFF6FF] text-[#003B52] dark:bg-[#006680] dark:text-[#B8F4FF];
   }
 }

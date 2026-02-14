@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { AssetsPage } from "@/components/dashboard/assets-page";
+import { ResourcesPage } from "@/components/dashboard/resources-page";
 
 export default async function AssetsPageWrapper() {
   const { userId } = await auth();
@@ -8,5 +8,5 @@ export default async function AssetsPageWrapper() {
     redirect("/sign-in?redirect_url=/dashboard/assets");
   }
 
-  return <AssetsPage merchantId={userId} />;
+  return <ResourcesPage merchantId={userId} />;
 }

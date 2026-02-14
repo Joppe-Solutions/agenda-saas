@@ -86,27 +86,27 @@ export default async function MerchantBookingPage({ params }: MerchantBookingPag
                 </CardContent>
               </Card>
 
-              {/* Assets/Resources */}
-              {data.assets.length > 0 && (
+              {/* Resources */}
+              {data.resources.length > 0 && (
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base">Recursos Disponíveis</CardTitle>
                     <CardDescription>Selecione um recurso no formulário</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    {data.assets.map((asset) => (
+                    {data.resources.map((resource) => (
                       <div
-                        key={asset.id}
+                        key={resource.id}
                         className="flex items-center justify-between rounded-lg border p-3"
                       >
                         <div>
-                          <p className="font-medium">{asset.name}</p>
+                          <p className="font-medium">{resource.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            Até {asset.capacity} pessoas
+                            Até {resource.capacity} pessoas
                           </p>
                         </div>
                         <p className="font-semibold text-primary">
-                          R$ {asset.basePrice.toFixed(2)}
+                          R$ {resource.basePrice.toFixed(2)}
                         </p>
                       </div>
                     ))}
@@ -127,10 +127,11 @@ export default async function MerchantBookingPage({ params }: MerchantBookingPag
               </CardHeader>
               <CardContent>
                 <BookingForm
-                  assets={data.assets}
+                  resources={data.resources}
                   merchantId={data.merchant.id}
                   merchantName={data.merchant.businessName}
                   merchantWhatsapp={data.merchant.whatsappNumber}
+                  signalPercentage={data.merchant.signalPercentage}
                 />
               </CardContent>
             </Card>
