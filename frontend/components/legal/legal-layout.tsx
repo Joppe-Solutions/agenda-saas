@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { CalendarCheck, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/ui/logo";
 
 interface LegalLayoutProps {
   title: string;
@@ -11,42 +12,41 @@ interface LegalLayoutProps {
 export function LegalLayout({ title, lastUpdated, children }: LegalLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b">
-        <div className="container mx-auto flex h-14 max-w-4xl items-center justify-between px-4 sm:h-16">
+      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
+        <div className="container mx-auto flex h-16 max-w-4xl items-center justify-between px-4">
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary sm:h-8 sm:w-8">
-              <CalendarCheck className="h-4 w-4 text-primary-foreground sm:h-5 sm:w-5" />
-            </div>
-            <span className="text-lg font-bold sm:text-xl">reserva.online</span>
+            <Logo variant="full" size="sm" />
           </Link>
-          <Button variant="ghost" size="sm" asChild>
+          <Button variant="ghost" size="sm" asChild className="gap-2">
             <Link href="/">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Voltar
+              <ArrowLeft className="h-4 w-4" />
+              Voltar para Home
             </Link>
           </Button>
         </div>
       </header>
 
-      {/* Content */}
-      <main className="container mx-auto max-w-4xl px-4 py-8 sm:py-12">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">{title}</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+      <main className="container mx-auto max-w-4xl px-4 py-12 sm:py-16">
+        <div className="mb-10">
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{title}</h1>
+          <p className="mt-3 text-muted-foreground">
             Última atualização: {lastUpdated}
           </p>
         </div>
 
-        <div className="prose prose-slate max-w-none prose-headings:font-semibold prose-headings:tracking-tight prose-h2:mt-8 prose-h2:text-xl prose-h3:mt-6 prose-h3:text-lg prose-p:text-muted-foreground prose-li:text-muted-foreground prose-strong:text-foreground">
+        <div className="prose prose-slate max-w-none dark:prose-invert prose-headings:font-semibold prose-headings:tracking-tight prose-h2:mt-10 prose-h2:text-xl prose-h3:mt-6 prose-h3:text-lg prose-p:text-muted-foreground prose-li:text-muted-foreground prose-strong:text-foreground">
           {children}
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t">
-        <div className="container mx-auto max-w-4xl px-4 py-6 text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} reserva.online. Todos os direitos reservados.
+      <footer className="border-t bg-muted/30">
+        <div className="container mx-auto max-w-4xl px-4 py-8 text-center text-sm text-muted-foreground">
+          <p>© {new Date().getFullYear()} reserva.online. Todos os direitos reservados.</p>
+          <div className="mt-4 flex justify-center gap-6">
+            <Link href="/privacidade" className="hover:text-foreground transition-colors">Privacidade</Link>
+            <Link href="/termos" className="hover:text-foreground transition-colors">Termos</Link>
+            <Link href="/cookies" className="hover:text-foreground transition-colors">Cookies</Link>
+          </div>
         </div>
       </footer>
     </div>

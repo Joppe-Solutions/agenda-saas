@@ -452,8 +452,14 @@ export const updateBookingStatus = api(
       throw APIError.invalidArgument("Invalid request body", parsed.error);
     }
 
-    const booking = await db.queryRow<{ id: string; status: Booking["status"] }>`
-      SELECT id, status
+    const booking = await db.queryRow<{ 
+      id: string; 
+      status: Booking["status"];
+      booking_date: Date;
+      start_time: string | null;
+      deposit_amount: number;
+    }>`
+      SELECT id, status, booking_date, start_time, deposit_amount
       FROM bookings
       WHERE id = ${bookingId}
         AND merchant_id = ${merchantId}
@@ -476,6 +482,32 @@ export const updateBookingStatus = api(
       throw APIError.invalidArgument(`Não é possível alterar status de ${booking.status} para ${parsed.data.status}`);
     }
 
+    let cancellationInfo: { withinDeadline: boolean; refundAmount: number } | undefined;
+
+    if (parsed.data.status === "cancelled") {
+      const merchant = await db.queryRow<{
+        cancellation_deadline_hours: number | null;
+        cancellation_refund_percentage: number | null;
+      }>`
+        SELECT cancellation_deadline_hours, cancellation_refund_percentage
+        FROM merchants WHERE id = ${merchantId}
+      `;
+
+      const deadlineHours = merchant?.cancellation_deadline_hours ?? 24;
+      const refundPercentage = merchant?.cancellation_refund_percentage ?? 0;
+
+      const bookingDateTime = new Date(`${booking.booking_date.toISOString().split('T')[0]}T${booking.start_time || "00:00"}:00`);
+      const now = new Date();
+      const hoursUntilBooking = (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+      const withinDeadline = hoursUntilBooking >= deadlineHours;
+      const refundAmount = withinDeadline 
+        ? Number((booking.deposit_amount * refundPercentage / 100).toFixed(2))
+        : 0;
+
+      cancellationInfo = { withinDeadline, refundAmount };
+    }
+
     await db.exec`
       UPDATE bookings
       SET status = ${parsed.data.status}, 
@@ -484,7 +516,7 @@ export const updateBookingStatus = api(
       WHERE id = ${bookingId}
     `;
 
-    return { ok: true };
+    return { ok: true, cancellationInfo };
   },
 );
 

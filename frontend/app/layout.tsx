@@ -55,13 +55,15 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         },
       }}
     >
-      <html lang="pt-BR" className={inter.variable} suppressHydrationWarning>
+      <html lang="pt-BR" className={`${inter.variable} light`} suppressHydrationWarning>
         <body className="font-sans antialiased">
           <ThemeProvider
             attribute="class"
             defaultTheme="light"
+            themes={["light"]}
             enableSystem={false}
             disableTransitionOnChange
+            forcedTheme="light"
           >
             {children}
             <JivoChat />

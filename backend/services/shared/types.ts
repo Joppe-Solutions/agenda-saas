@@ -43,6 +43,8 @@ export interface Merchant {
   signalPercentage: number;
   signalDeadlineMinutes: number;
   signalAutoCancel: boolean;
+  cancellationDeadlineHours: number;
+  cancellationRefundPercentage: number;
 }
 
 export interface Resource {

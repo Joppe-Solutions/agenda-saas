@@ -50,6 +50,16 @@ export async function updateSignalConfig(
   });
 }
 
+export async function updateCancellationPolicy(
+  merchantId: string, 
+  data: { deadlineHours?: number; refundPercentage?: number }
+) {
+  return request<{ ok: boolean }>(`/merchant/${merchantId}/cancellation-policy`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
 export async function getDashboardSummary(merchantId: string): Promise<DashboardStats> {
   return request<DashboardStats>(`/merchant/${merchantId}/dashboard`);
 }

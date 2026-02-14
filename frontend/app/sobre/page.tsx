@@ -1,36 +1,35 @@
 import Link from "next/link";
-import { CalendarCheck, ArrowLeft, Users, Target, Heart } from "lucide-react";
+import { ArrowLeft, Users, Target, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Logo } from "@/components/ui/logo";
 
 export default function SobrePage() {
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b">
-        <div className="container mx-auto flex h-14 max-w-4xl items-center justify-between px-4 sm:h-16">
+      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
+        <div className="container mx-auto flex h-16 max-w-4xl items-center justify-between px-4">
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary sm:h-8 sm:w-8">
-              <CalendarCheck className="h-4 w-4 text-primary-foreground sm:h-5 sm:w-5" />
-            </div>
-            <span className="text-lg font-bold sm:text-xl">reserva.online</span>
+            <Logo variant="full" size="sm" />
           </Link>
-          <Button variant="ghost" size="sm" asChild>
+          <Button variant="ghost" size="sm" asChild className="gap-2">
             <Link href="/">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Voltar
+              <ArrowLeft className="h-4 w-4" />
+              Voltar para Home
             </Link>
           </Button>
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="border-b bg-muted/30 py-12 sm:py-16">
-        <div className="container mx-auto max-w-4xl px-4 text-center">
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
+      <section className="relative overflow-hidden border-b bg-background py-16 sm:py-20">
+        <div className="absolute inset-0 hero-grid-pattern opacity-20" />
+        <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
+        
+        <div className="container relative mx-auto max-w-4xl px-4 text-center">
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
             Sobre o reserva.online
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-sm text-muted-foreground sm:text-base lg:text-lg">
+          <p className="mx-auto mt-6 max-w-2xl text-muted-foreground text-lg">
             Nascemos com a missão de simplificar a vida de quem trabalha com reservas.
             De barcos de pesca a estúdios de fotografia, queremos que você foque no que
             realmente importa: seu negócio.
@@ -38,42 +37,41 @@ export default function SobrePage() {
         </div>
       </section>
 
-      {/* Content */}
       <main className="container mx-auto max-w-4xl px-4 py-12 sm:py-16">
-        <div className="grid gap-8 md:grid-cols-3">
-          <Card className="border-0 bg-muted/30">
+        <div className="grid gap-6 md:grid-cols-3">
+          <Card className="border-border/50 bg-card/50 shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
                 <Target className="h-6 w-6 text-primary" />
               </div>
               <h3 className="text-lg font-semibold">Nossa Missão</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
+              <p className="mt-2 text-muted-foreground">
                 Democratizar o acesso a ferramentas profissionais de gestão de reservas,
                 permitindo que qualquer empreendedor gerencie seu negócio de forma eficiente.
               </p>
             </CardContent>
           </Card>
 
-          <Card className="border-0 bg-muted/30">
+          <Card className="border-border/50 bg-card/50 shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
                 <Heart className="h-6 w-6 text-primary" />
               </div>
               <h3 className="text-lg font-semibold">Nossos Valores</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
+              <p className="mt-2 text-muted-foreground">
                 Simplicidade, transparência e foco no cliente. Acreditamos que tecnologia
                 deve facilitar a vida, não complicá-la.
               </p>
             </CardContent>
           </Card>
 
-          <Card className="border-0 bg-muted/30">
+          <Card className="border-border/50 bg-card/50 shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="pt-6">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
                 <Users className="h-6 w-6 text-primary" />
               </div>
               <h3 className="text-lg font-semibold">Nossa Equipe</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
+              <p className="mt-2 text-muted-foreground">
                 Somos uma equipe apaixonada por tecnologia e empreendedorismo, trabalhando
                 para criar a melhor solução de reservas do Brasil.
               </p>
@@ -81,21 +79,28 @@ export default function SobrePage() {
           </Card>
         </div>
 
-        <div className="mt-12 rounded-xl bg-primary p-8 text-center text-primary-foreground sm:p-12">
-          <h2 className="text-xl font-bold sm:text-2xl">Pronto para começar?</h2>
-          <p className="mx-auto mt-2 max-w-xl text-sm text-primary-foreground/80 sm:text-base">
-            Junte-se a centenas de empreendedores que já transformaram a forma como gerenciam suas reservas.
-          </p>
-          <Button size="lg" variant="secondary" className="mt-6" asChild>
-            <Link href="/sign-up">Criar Conta Gratuita</Link>
-          </Button>
+        <div className="mt-12 relative overflow-hidden rounded-2xl bg-primary p-8 text-center text-primary-foreground sm:p-12">
+          <div className="absolute inset-0 hero-grid-pattern opacity-10" />
+          <div className="relative">
+            <h2 className="text-2xl font-bold sm:text-3xl">Pronto para começar?</h2>
+            <p className="mx-auto mt-4 max-w-xl text-primary-foreground/80">
+              Junte-se a milhares de empreendedores que já transformaram a forma como gerenciam suas reservas.
+            </p>
+            <Button size="lg" variant="secondary" className="mt-8" asChild>
+              <Link href="/sign-up">Criar Conta Gratuita</Link>
+            </Button>
+          </div>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t">
-        <div className="container mx-auto max-w-4xl px-4 py-6 text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} reserva.online. Todos os direitos reservados.
+      <footer className="border-t bg-muted/30">
+        <div className="container mx-auto max-w-4xl px-4 py-8 text-center text-sm text-muted-foreground">
+          <p>© {new Date().getFullYear()} reserva.online. Todos os direitos reservados.</p>
+          <div className="mt-4 flex justify-center gap-6">
+            <Link href="/privacidade" className="hover:text-foreground transition-colors">Privacidade</Link>
+            <Link href="/termos" className="hover:text-foreground transition-colors">Termos</Link>
+            <Link href="/cookies" className="hover:text-foreground transition-colors">Cookies</Link>
+          </div>
         </div>
       </footer>
     </div>

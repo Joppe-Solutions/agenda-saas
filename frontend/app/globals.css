@@ -80,46 +80,6 @@
     --info-bg: 190 100% 90%;
     --info-fg: 195 100% 16%;
   }
-
-  .dark {
-    --background: 224 75% 18%;
-    --foreground: 210 40% 98%;
-    --card: 228 73% 24%;
-    --card-foreground: 210 40% 98%;
-    --popover: 228 73% 24%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 197 100% 50%;
-    --primary-foreground: 224 75% 10%;
-    --secondary: 224 71% 29%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 228 73% 24%;
-    --muted-foreground: 213 16% 77%;
-    --accent: 197 100% 45%;
-    --accent-foreground: 224 75% 10%;
-    --destructive: 0 91% 71%;
-    --destructive-foreground: 224 75% 18%;
-    --border: 226 70% 40%;
-    --input: 226 70% 40%;
-    --ring: 197 100% 50%;
-    --chart-1: 197 100% 50%;
-    --chart-2: 221 85% 63%;
-    --chart-3: 222 92% 73%;
-    --chart-4: 142 71% 50%;
-    --chart-5: 213 16% 77%;
-    
-    --success: 142 71% 50%;
-    --success-bg: 142 50% 15%;
-    --success-fg: 142 70% 85%;
-    --warning: 25 95% 60%;
-    --warning-bg: 25 50% 15%;
-    --warning-fg: 25 80% 85%;
-    --danger: 0 91% 71%;
-    --danger-bg: 0 50% 15%;
-    --danger-fg: 0 80% 85%;
-    --info: 197 100% 60%;
-    --info-bg: 197 50% 15%;
-    --info-fg: 197 70% 85%;
-  }
 }
 
 @layer base {
@@ -208,18 +168,18 @@
     @apply bg-secondary text-secondary-foreground;
   }
   .badge-info {
-    @apply bg-[#CFF6FF] text-[#003B52] dark:bg-[#003B52] dark:text-[#CFF6FF];
+    @apply bg-[#CFF6FF] text-[#003B52];
   }
   .badge-success {
-    @apply bg-[#DCFCE7] text-[#14532D] dark:bg-[#14532D] dark:text-[#BBF7D0];
+    @apply bg-[#DCFCE7] text-[#14532D];
   }
   .badge-warning {
-    @apply bg-[#FEF3C7] text-[#7C2D12] dark:bg-[#78350F] dark:text-[#FDE68A];
+    @apply bg-[#FEF3C7] text-[#7C2D12];
   }
   .badge-danger {
-    @apply bg-[#FEE2E2] text-[#7F1D1D] dark:bg-[#7F1D1D] dark:text-[#FECACA];
+    @apply bg-[#FEE2E2] text-[#7F1D1D];
   }
   .badge-highlight {
-    @apply bg-[#CFF6FF] text-[#003B52] dark:bg-[#006680] dark:text-[#B8F4FF];
+    @apply bg-[#CFF6FF] text-[#003B52];
   }
 }

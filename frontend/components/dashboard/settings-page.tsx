@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { getMerchantProfile, upsertMerchantProfile } from "@/lib/api";
+import { getMerchantProfile, upsertMerchantProfile, updateCancellationPolicy } from "@/lib/api";
 import type { Merchant, MerchantNiche } from "@/lib/types";
 
 interface SettingsPageProps {
@@ -31,6 +31,7 @@ const nicheLabels: Record<MerchantNiche, string> = {
 export function SettingsPage({ merchantId }: SettingsPageProps) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingPolicy, setSavingPolicy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [merchant, setMerchant] = useState<Merchant | null>(null);
@@ -42,6 +43,11 @@ export function SettingsPage({ merchantId }: SettingsPageProps) {
     whatsappNumber: "",
     pixKey: "",
     mercadoPagoAccessToken: "",
+  });
+
+  const [policyData, setPolicyData] = useState({
+    deadlineHours: 24,
+    refundPercentage: 0,
   });
 
   useEffect(() => {
@@ -58,6 +64,10 @@ export function SettingsPage({ merchantId }: SettingsPageProps) {
           whatsappNumber: data.merchant.whatsappNumber,
           pixKey: data.merchant.pixKey,
           mercadoPagoAccessToken: data.merchant.mercadoPagoAccessToken ?? "",
+        });
+        setPolicyData({
+          deadlineHours: data.merchant.cancellationDeadlineHours ?? 24,
+          refundPercentage: data.merchant.cancellationRefundPercentage ?? 0,
         });
       } catch (err) {
         setError("Não foi possível carregar os dados");
@@ -90,6 +100,23 @@ export function SettingsPage({ merchantId }: SettingsPageProps) {
       console.error(err);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSavePolicy = async () => {
+    setSavingPolicy(true);
+    try {
+      await updateCancellationPolicy(merchantId, {
+        deadlineHours: policyData.deadlineHours,
+        refundPercentage: policyData.refundPercentage,
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      setError("Erro ao salvar política de cancelamento");
+      console.error(err);
+    } finally {
+      setSavingPolicy(false);
     }
   };
 
@@ -220,6 +247,72 @@ export function SettingsPage({ merchantId }: SettingsPageProps) {
                 Encontre em: Mercado Pago → Desenvolvedores → Credenciais → Access Token
               </p>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Política de Cancelamento</CardTitle>
+          <CardDescription>Configure as regras de cancelamento para suas reservas</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="deadlineHours">Prazo de Cancelamento (horas antes)</Label>
+            <Input
+              id="deadlineHours"
+              type="number"
+              min={0}
+              max={168}
+              value={policyData.deadlineHours}
+              onChange={(e) => setPolicyData({ ...policyData, deadlineHours: parseInt(e.target.value) || 0 })}
+            />
+            <p className="text-xs text-muted-foreground">
+              Clientes só podem cancelar até {policyData.deadlineHours} horas antes da reserva
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="refundPercentage">Reembolso do Sinal (%)</Label>
+            <Input
+              id="refundPercentage"
+              type="number"
+              min={0}
+              max={100}
+              value={policyData.refundPercentage}
+              onChange={(e) => setPolicyData({ ...policyData, refundPercentage: parseInt(e.target.value) || 0 })}
+            />
+            <p className="text-xs text-muted-foreground">
+              Porcentagem do sinal que será reembolsada em caso de cancelamento dentro do prazo
+            </p>
+          </div>
+
+          <div className="rounded-lg bg-muted p-3 text-sm">
+            <p className="font-medium">Exemplo:</p>
+            <p className="text-muted-foreground mt-1">
+              Com prazo de {policyData.deadlineHours}h e reembolso de {policyData.refundPercentage}%:
+            </p>
+            <ul className="text-muted-foreground mt-1 list-disc list-inside text-xs space-y-1">
+              <li>Cliente pode cancelar até {policyData.deadlineHours}h antes</li>
+              <li>Se cancelar no prazo, recebe {policyData.refundPercentage}% do sinal de volta</li>
+              <li>Se cancelar fora do prazo, não recebe reembolso</li>
+            </ul>
+          </div>
+
+          <div className="flex justify-end pt-2 border-t">
+            <Button onClick={handleSavePolicy} disabled={savingPolicy}>
+              {savingPolicy ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Salvar Política
+                </>
+              )}
+            </Button>
           </div>
         </CardContent>
       </Card>

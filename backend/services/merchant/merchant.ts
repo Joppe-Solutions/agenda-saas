@@ -90,6 +90,8 @@ export const getPublicMerchant = api(
         signalPercentage: merchant.signal_percentage,
         signalDeadlineMinutes: merchant.signal_deadline_minutes,
         signalAutoCancel: merchant.signal_auto_cancel,
+        cancellationDeadlineHours: 24,
+        cancellationRefundPercentage: 0,
       },
       resources: resources.map((item) => ({
         id: item.id,
@@ -128,10 +130,13 @@ export const getMerchantProfile = api(
       signal_percentage: number;
       signal_deadline_minutes: number;
       signal_auto_cancel: boolean;
+      cancellation_deadline_hours: number | null;
+      cancellation_refund_percentage: number | null;
     }>`
       SELECT id, slug, business_name, niche, whatsapp_number, pix_key, email, 
              mercado_pago_access_token, address, city,
-             signal_percentage, signal_deadline_minutes, signal_auto_cancel
+             signal_percentage, signal_deadline_minutes, signal_auto_cancel,
+             cancellation_deadline_hours, cancellation_refund_percentage
       FROM merchants
       WHERE id = ${merchantId}
     `;
@@ -155,6 +160,8 @@ export const getMerchantProfile = api(
         signalPercentage: merchant.signal_percentage,
         signalDeadlineMinutes: merchant.signal_deadline_minutes,
         signalAutoCancel: merchant.signal_auto_cancel,
+        cancellationDeadlineHours: merchant.cancellation_deadline_hours ?? 24,
+        cancellationRefundPercentage: merchant.cancellation_refund_percentage ?? 0,
       },
     };
   },
@@ -218,6 +225,34 @@ export const updateSignalConfig = api(
         signal_percentage = COALESCE(${signalPercentage}, signal_percentage),
         signal_deadline_minutes = COALESCE(${signalDeadlineMinutes}, signal_deadline_minutes),
         signal_auto_cancel = COALESCE(${signalAutoCancel}, signal_auto_cancel),
+        updated_at = now()
+      WHERE id = ${merchantId}
+    `;
+
+    return { ok: true };
+  },
+);
+
+export const updateCancellationPolicy = api(
+  { expose: true, method: "PATCH", path: "/merchant/:merchantId/cancellation-policy" },
+  async ({ merchantId, deadlineHours, refundPercentage }: { 
+    merchantId: string; 
+    deadlineHours?: number; 
+    refundPercentage?: number;
+  }) => {
+    const merchant = await db.queryRow<{ id: string }>`
+      SELECT id FROM merchants WHERE id = ${merchantId}
+    `;
+
+    if (!merchant) {
+      throw APIError.notFound("Merchant not found");
+    }
+
+    await db.exec`
+      UPDATE merchants
+      SET 
+        cancellation_deadline_hours = COALESCE(${deadlineHours}, cancellation_deadline_hours),
+        cancellation_refund_percentage = COALESCE(${refundPercentage}, cancellation_refund_percentage),
         updated_at = now()
       WHERE id = ${merchantId}
     `;
