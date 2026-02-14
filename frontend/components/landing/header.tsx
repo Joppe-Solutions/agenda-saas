@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, X } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 const navLinks = [
   { href: "#recursos", label: "Recursos" },
@@ -35,8 +34,8 @@ export function Header() {
       <nav
         className={`flex items-center justify-between w-full max-w-6xl px-4 py-2.5 rounded-2xl transition-all duration-500 ${
           scrolled
-            ? "bg-background/80 dark:bg-background/80 backdrop-blur-xl border border-border/80 shadow-lg shadow-black/10"
-            : "bg-background/40 dark:bg-background/40 backdrop-blur-md border border-border/40"
+            ? "bg-background/80 backdrop-blur-xl border border-border/80 shadow-lg shadow-black/10"
+            : "bg-background/40 backdrop-blur-md border border-border/40"
         }`}
       >
         <Link href="/" className="flex items-center">
@@ -56,7 +55,6 @@ export function Header() {
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
-          <ThemeToggle />
           <Button variant="ghost" size="sm" asChild className="rounded-xl px-4">
             <Link href="/sign-in">Entrar</Link>
           </Button>
@@ -70,7 +68,6 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-2 md:hidden">
-          <ThemeToggle />
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-lg">

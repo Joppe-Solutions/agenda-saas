@@ -622,3 +622,205 @@ export const rescheduleBooking = api(
     };
   },
 );
+
+export const retryPayment = api(
+  { expose: true, method: "POST", path: "/booking/:bookingId/retry-payment" },
+  async ({ bookingId }: { bookingId: string }) => {
+    const booking = await db.queryRow<{
+      id: string;
+      merchant_id: string;
+      resource_id: string;
+      status: Booking["status"];
+      customer_name: string;
+      customer_phone: string;
+      customer_email: string | null;
+      deposit_amount: number;
+      total_amount: number;
+      payment_id: string | null;
+    }>`
+      SELECT id, merchant_id, resource_id, status, customer_name, customer_phone, customer_email, 
+             deposit_amount, total_amount, payment_id
+      FROM bookings
+      WHERE id = ${bookingId}
+    `;
+
+    if (!booking) {
+      throw APIError.notFound("Booking not found");
+    }
+
+    if (booking.status !== "pending_payment" && booking.status !== "cancelled") {
+      throw APIError.invalidArgument("Só é possível reenviar cobrança para reservas aguardando pagamento ou canceladas");
+    }
+
+    const merchant = await db.queryRow<{
+      signal_deadline_minutes: number;
+      mercado_pago_access_token: string | null;
+    }>`
+      SELECT signal_deadline_minutes, mercado_pago_access_token
+      FROM merchants WHERE id = ${booking.merchant_id}
+    `;
+
+    if (!merchant) {
+      throw APIError.notFound("Merchant not found");
+    }
+
+    const now = new Date();
+    const signalExpiresAt = new Date(now.getTime() + merchant.signal_deadline_minutes * 60 * 1000);
+
+    const provider: PaymentProvider = merchant.mercado_pago_access_token ? "MERCADO_PAGO" : "STUB";
+
+    const payment = await createPixPayment(
+      {
+        bookingId,
+        amount: booking.deposit_amount,
+        customerName: booking.customer_name,
+        customerEmail: booking.customer_email ?? undefined,
+        customerPhone: booking.customer_phone,
+      },
+      provider,
+      merchant.mercado_pago_access_token ?? undefined,
+    );
+
+    await db.exec`
+      INSERT INTO payments (id, booking_id, merchant_id, amount, status, payment_method, provider, provider_payment_id, qr_code, copy_paste_code)
+      VALUES (
+        ${randomUUID()},
+        ${bookingId},
+        ${booking.merchant_id},
+        ${booking.deposit_amount},
+        'pending',
+        'PIX',
+        ${provider},
+        ${payment.paymentId},
+        ${payment.qrCode},
+        ${payment.copyPasteCode}
+      )
+    `;
+
+    await db.exec`
+      UPDATE bookings
+      SET 
+        status = 'pending_payment',
+        payment_id = ${payment.paymentId}, 
+        qr_code = ${payment.qrCode}, 
+        copy_paste_code = ${payment.copyPasteCode},
+        signal_expires_at = ${signalExpiresAt.toISOString()},
+        updated_at = now()
+      WHERE id = ${bookingId}
+    `;
+
+    return {
+      ok: true,
+      payment: {
+        paymentId: payment.paymentId,
+        qrCode: payment.qrCode,
+        copyPasteCode: payment.copyPasteCode,
+        expiresAt: signalExpiresAt.toISOString(),
+      },
+    };
+  },
+);
+
+export const getBookingReceipt = api(
+  { expose: true, method: "GET", path: "/booking/:bookingId/receipt" },
+  async ({ bookingId }: { bookingId: string }) => {
+    const booking = await db.queryRow<{
+      id: string;
+      merchant_id: string;
+      resource_id: string;
+      customer_name: string;
+      customer_phone: string;
+      customer_email: string | null;
+      booking_date: Date;
+      start_time: string | null;
+      end_time: string | null;
+      people_count: number;
+      status: Booking["status"];
+      deposit_amount: number;
+      total_amount: number;
+      created_at: Date;
+    }>`
+      SELECT id, merchant_id, resource_id, customer_name, customer_phone, customer_email,
+             booking_date, start_time, end_time, people_count, status, deposit_amount, total_amount, created_at
+      FROM bookings
+      WHERE id = ${bookingId}
+    `;
+
+    if (!booking) {
+      throw APIError.notFound("Booking not found");
+    }
+
+    const merchant = await db.queryRow<{
+      business_name: string;
+      slug: string;
+      whatsapp_number: string;
+      email: string | null;
+      address: string | null;
+      city: string | null;
+      pix_key: string;
+    }>`
+      SELECT business_name, slug, whatsapp_number, email, address, city, pix_key
+      FROM merchants WHERE id = ${booking.merchant_id}
+    `;
+
+    if (!merchant) {
+      throw APIError.notFound("Merchant not found");
+    }
+
+    const resource = await db.queryRow<{
+      name: string;
+      resource_type: string;
+    }>`
+      SELECT name, resource_type FROM resources WHERE id = ${booking.resource_id}
+    `;
+
+    const payment = await db.queryRow<{
+      id: string;
+      amount: number;
+      status: string;
+      paid_at: Date | null;
+    }>`
+      SELECT id, amount, status, paid_at
+      FROM payments
+      WHERE booking_id = ${bookingId} AND status = 'approved'
+      ORDER BY created_at DESC
+      LIMIT 1
+    `;
+
+    return {
+      booking: {
+        id: booking.id,
+        customerName: booking.customer_name,
+        customerPhone: booking.customer_phone,
+        customerEmail: booking.customer_email ?? undefined,
+        bookingDate: booking.booking_date.toISOString().split('T')[0],
+        startTime: booking.start_time ?? undefined,
+        endTime: booking.end_time ?? undefined,
+        peopleCount: booking.people_count,
+        status: booking.status,
+        depositAmount: Number(booking.deposit_amount),
+        totalAmount: Number(booking.total_amount),
+        createdAt: booking.created_at.toISOString(),
+      },
+      merchant: {
+        businessName: merchant.business_name,
+        slug: merchant.slug,
+        whatsappNumber: merchant.whatsapp_number,
+        email: merchant.email ?? undefined,
+        address: merchant.address ?? undefined,
+        city: merchant.city ?? undefined,
+        pixKey: merchant.pix_key,
+      },
+      resource: {
+        name: resource?.name ?? "Recurso",
+        type: resource?.resource_type ?? "OTHER",
+      },
+      payment: payment ? {
+        id: payment.id,
+        amount: Number(payment.amount),
+        status: payment.status,
+        paidAt: payment.paid_at?.toISOString(),
+      } : undefined,
+    };
+  },
+);

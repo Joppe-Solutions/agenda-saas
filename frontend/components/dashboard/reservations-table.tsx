@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { format, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { MoreHorizontal, Check, X, Phone, Calendar, Users, Clock, PlayCircle, UserX, MessageCircle, RefreshCw, Filter, CalendarClock } from "lucide-react";
+import { MoreHorizontal, Check, X, Phone, Calendar, Users, Clock, PlayCircle, UserX, MessageCircle, RefreshCw, Filter, CalendarClock, CreditCard, Copy, CheckCircle, FileText, Download, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -40,9 +40,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { updateBookingStatus, rescheduleBooking } from "@/lib/api";
+import { updateBookingStatus, rescheduleBooking, retryBookingPayment, getBookingReceipt } from "@/lib/api";
 import type { Booking, BookingStatus } from "@/lib/types";
-import { BOOKING_STATUS_LABELS, BOOKING_STATUS_COLORS } from "@/lib/types";
+import { BOOKING_STATUS_LABELS, BOOKING_STATUS_COLORS, RESOURCE_TYPE_LABELS } from "@/lib/types";
 
 interface ReservationsTableProps {
   merchantId: string;
@@ -69,6 +69,13 @@ export function ReservationsTable({ merchantId, initialBookings }: ReservationsT
     newStartTime: "",
   });
   const [rescheduleLoading, setRescheduleLoading] = useState(false);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [paymentBooking, setPaymentBooking] = useState<Booking | null>(null);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
+  const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
+  const [receiptData, setReceiptData] = useState<Awaited<ReturnType<typeof getBookingReceipt>> | null>(null);
+  const [receiptLoading, setReceiptLoading] = useState(false);
 
   const filteredBookings = statusFilter === "all" 
     ? bookings 
@@ -113,6 +120,53 @@ export function ReservationsTable({ merchantId, initialBookings }: ReservationsT
     } finally {
       setRescheduleLoading(false);
     }
+  };
+
+  const handleRetryPayment = async (booking: Booking) => {
+    setLoadingId(booking.id);
+    setPaymentLoading(true);
+    try {
+      const result = await retryBookingPayment(booking.id);
+      const updatedBooking = { 
+        ...booking, 
+        status: "pending_payment" as const,
+        qrCode: result.payment.qrCode,
+        copyPasteCode: result.payment.copyPasteCode,
+      };
+      setBookings(prev => prev.map(b => b.id === booking.id ? updatedBooking : b));
+      setPaymentBooking(updatedBooking);
+      setPaymentDialogOpen(true);
+    } catch (err) {
+      console.error("Error retrying payment:", err);
+      alert("Erro ao gerar nova cobrança.");
+    } finally {
+      setLoadingId(null);
+      setPaymentLoading(false);
+    }
+  };
+
+  const copyToClipboard = async (text: string, type: string) => {
+    await navigator.clipboard.writeText(text);
+    setCopied(type);
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  const handleOpenReceipt = async (booking: Booking) => {
+    setReceiptLoading(true);
+    try {
+      const data = await getBookingReceipt(booking.id);
+      setReceiptData(data);
+      setReceiptDialogOpen(true);
+    } catch (err) {
+      console.error("Error loading receipt:", err);
+      alert("Erro ao carregar comprovante.");
+    } finally {
+      setReceiptLoading(false);
+    }
+  };
+
+  const handlePrintReceipt = () => {
+    window.print();
   };
 
   const timeSlots = [];
@@ -296,6 +350,18 @@ export function ReservationsTable({ merchantId, initialBookings }: ReservationsT
                           </DropdownMenuItem>
                         )}
 
+                        {(booking.status === "cancelled" || booking.status === "pending_payment") && (
+                          <DropdownMenuItem onClick={() => handleRetryPayment(booking)}>
+                            <CreditCard className="mr-2 h-4 w-4 text-brand-yellow" />
+                            Cobrar Sinal Novamente
+                          </DropdownMenuItem>
+                        )}
+
+                        <DropdownMenuItem onClick={() => handleOpenReceipt(booking)}>
+                          <FileText className="mr-2 h-4 w-4" />
+                          Ver Comprovante
+                        </DropdownMenuItem>
+
                         <DropdownMenuSeparator />
                         
                         <DropdownMenuItem asChild>
@@ -362,6 +428,218 @@ export function ReservationsTable({ merchantId, initialBookings }: ReservationsT
             >
               {rescheduleLoading ? "Reagendando..." : "Confirmar Reagendamento"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pagamento PIX Gerado</DialogTitle>
+            <DialogDescription>
+              Envie o QR Code ou código para {paymentBooking?.customerName}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex justify-center">
+              <div className="bg-white p-4 rounded-lg">
+                <img 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(paymentBooking?.qrCode || '')}`}
+                  alt="QR Code PIX"
+                  className="w-48 h-48"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Código PIX (copia e cola)</Label>
+              <div className="flex gap-2">
+                <Input
+                  readOnly
+                  value={paymentBooking?.copyPasteCode || ''}
+                  className="font-mono text-xs"
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => copyToClipboard(paymentBooking?.copyPasteCode || '', 'code')}
+                >
+                  {copied === 'code' ? (
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+            <div className="rounded-lg bg-yellow-50 dark:bg-yellow-900/20 p-3 text-sm">
+              <p className="font-medium text-yellow-800 dark:text-yellow-300">Valor do Sinal</p>
+              <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">
+                R$ {paymentBooking?.depositAmount.toFixed(2)}
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPaymentDialogOpen(false)}>
+              Fechar
+            </Button>
+            <Button
+              className="bg-green-600 hover:bg-green-700 text-white"
+              asChild
+            >
+              <a
+                href={`https://wa.me/${paymentBooking?.customerPhone.replace(/\D/g, '')}?text=${encodeURIComponent(`Olá! Aqui está o QR Code para pagamento do sinal de R$ ${paymentBooking?.depositAmount.toFixed(2)} da sua reserva.\n\nCódigo PIX:\n${paymentBooking?.copyPasteCode}`)}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <MessageCircle className="mr-2 h-4 w-4" />
+                Enviar por WhatsApp
+              </a>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={receiptDialogOpen} onOpenChange={setReceiptDialogOpen}>
+        <DialogContent className="max-w-md print:max-w-none print:shadow-none">
+          <DialogHeader className="print:hidden">
+            <DialogTitle>Comprovante de Reserva</DialogTitle>
+            <DialogDescription>
+              Detalhes da reserva para {receiptData?.booking.customerName}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {receiptData && (
+            <div className="space-y-4 py-4 print:py-0" id="receipt-content">
+              <div className="text-center border-b pb-4">
+                <h2 className="text-xl font-bold text-brand-blue">{receiptData.merchant.businessName}</h2>
+                {receiptData.merchant.address && (
+                  <p className="text-sm text-muted-foreground">{receiptData.merchant.address}</p>
+                )}
+                {receiptData.merchant.city && (
+                  <p className="text-sm text-muted-foreground">{receiptData.merchant.city}</p>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Reserva</p>
+                    <p className="font-mono text-sm">{receiptData.booking.id.slice(0, 8).toUpperCase()}</p>
+                  </div>
+                  <Badge className={BOOKING_STATUS_COLORS[receiptData.booking.status as BookingStatus]}>
+                    {BOOKING_STATUS_LABELS[receiptData.booking.status as BookingStatus]}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Cliente</p>
+                    <p className="font-medium">{receiptData.booking.customerName}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Telefone</p>
+                    <p className="font-medium">{receiptData.booking.customerPhone}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Recurso</p>
+                    <p className="font-medium">{receiptData.resource.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Pessoas</p>
+                    <p className="font-medium">{receiptData.booking.peopleCount}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Data</p>
+                    <p className="font-medium">
+                      {format(new Date(receiptData.booking.bookingDate + "T12:00:00"), "dd/MM/yyyy", { locale: ptBR })}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Horário</p>
+                    <p className="font-medium">
+                      {receiptData.booking.startTime || "Dia inteiro"}
+                      {receiptData.booking.endTime && ` - ${receiptData.booking.endTime}`}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="border-t pt-3">
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-muted-foreground">Valor Total</span>
+                    <span>R$ {receiptData.booking.totalAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-muted-foreground">Sinal Pago</span>
+                    <span className="font-medium text-green-600">R$ {receiptData.booking.depositAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm font-medium">
+                    <span>Saldo Restante</span>
+                    <span>R$ {(receiptData.booking.totalAmount - receiptData.booking.depositAmount).toFixed(2)}</span>
+                  </div>
+                </div>
+
+                {receiptData.payment && (
+                  <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 text-sm">
+                    <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
+                      <CheckCircle className="h-4 w-4" />
+                      <span className="font-medium">Pagamento Confirmado</span>
+                    </div>
+                    {receiptData.payment.paidAt && (
+                      <p className="text-xs text-green-600 dark:text-green-500 mt-1">
+                        Pago em {format(new Date(receiptData.payment.paidAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <div className="text-center text-xs text-muted-foreground border-t pt-3">
+                  <p>Reserva criada em {format(new Date(receiptData.booking.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
+                  <p className="mt-1">WhatsApp: {receiptData.merchant.whatsappNumber}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="print:hidden">
+            <Button variant="outline" onClick={() => setReceiptDialogOpen(false)}>
+              Fechar
+            </Button>
+            <Button onClick={handlePrintReceipt}>
+              <Printer className="mr-2 h-4 w-4" />
+              Imprimir
+            </Button>
+            {receiptData && (
+              <Button
+                className="bg-green-600 hover:bg-green-700 text-white"
+                asChild
+              >
+                <a
+                  href={`https://wa.me/${receiptData.booking.customerPhone.replace(/\D/g, '')}?text=${encodeURIComponent(`*COMPROVANTE DE RESERVA*\n\n` +
+                    `${receiptData.merchant.businessName}\n` +
+                    `Reserva: ${receiptData.booking.id.slice(0, 8).toUpperCase()}\n` +
+                    `Status: ${BOOKING_STATUS_LABELS[receiptData.booking.status as BookingStatus]}\n\n` +
+                    `*Cliente:* ${receiptData.booking.customerName}\n` +
+                    `*Recurso:* ${receiptData.resource.name}\n` +
+                    `*Data:* ${format(new Date(receiptData.booking.bookingDate + "T12:00:00"), "dd/MM/yyyy", { locale: ptBR })}\n` +
+                    `*Horário:* ${receiptData.booking.startTime || "Dia inteiro"}${receiptData.booking.endTime ? ` - ${receiptData.booking.endTime}` : ""}\n` +
+                    `*Pessoas:* ${receiptData.booking.peopleCount}\n\n` +
+                    `*Valor Total:* R$ ${receiptData.booking.totalAmount.toFixed(2)}\n` +
+                    `*Sinal Pago:* R$ ${receiptData.booking.depositAmount.toFixed(2)}\n` +
+                    `*Saldo Restante:* R$ ${(receiptData.booking.totalAmount - receiptData.booking.depositAmount).toFixed(2)}`)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <MessageCircle className="mr-2 h-4 w-4" />
+                  WhatsApp
+                </a>
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

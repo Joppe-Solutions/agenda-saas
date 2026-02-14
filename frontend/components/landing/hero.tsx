@@ -5,14 +5,20 @@ import { useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, CalendarCheck, CreditCard, Headphones } from "lucide-react";
+
+const socialProof = [
+  { icon: CalendarCheck, text: "20+ reservas hoje" },
+  { icon: CreditCard, text: "PIX confirmado" },
+  { icon: Headphones, text: "Suporte online" },
+];
 
 export function Hero() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
   return (
-    <section className="relative overflow-hidden pt-20 min-h-[90vh] flex items-center">
+    <section className="relative overflow-hidden pt-20 min-h-[90vh] flex items-center bg-background">
       <div className="absolute inset-0 hero-grid-pattern" />
       <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute top-20 right-1/4 w-[400px] h-[400px] bg-cyan-400/5 rounded-full blur-[100px] pointer-events-none" />
@@ -26,7 +32,7 @@ export function Hero() {
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6 }}
           >
-            <Badge variant="info" className="mb-4 px-4 py-1.5 text-xs sm:mb-6 sm:text-sm">
+            <Badge variant="info" className="mb-4 px-4 py-1.5 text-xs sm:mb-6 sm:text-sm bg-primary/10 border-primary/20 text-primary">
               Novo: Integração com PIX automático
             </Badge>
           </motion.div>
@@ -35,7 +41,7 @@ export function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl"
+            className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl"
           >
             Reservas online
             <span className="block bg-gradient-to-r from-primary to-cyan-400 bg-clip-text text-transparent">
@@ -47,11 +53,10 @@ export function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="mx-auto mt-4 max-w-2xl text-base text-muted-foreground sm:mt-6 sm:text-lg md:text-xl"
+            className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl"
           >
-            Transforme seu negócio com um sistema de reservas completo.
-            Gerencie agendamentos, receba pagamentos via PIX e ofereça
-            uma experiência incrível aos seus clientes.
+            Transforme seu negócio com um sistema de reservas completo. 
+            Gerencie agendamentos e receba pagamentos via PIX.
           </motion.p>
 
           <motion.div
@@ -60,13 +65,13 @@ export function Hero() {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="mt-8 flex flex-col items-center justify-center gap-3 sm:mt-10 sm:flex-row sm:gap-4"
           >
-            <Button size="lg" className="h-12 w-full px-8 text-base sm:w-auto" asChild>
+            <Button size="lg" className="h-12 w-full px-8 text-base sm:w-auto shadow-lg shadow-primary/25 hover:shadow-primary/40" asChild>
               <Link href="/sign-up">
                 Começar Gratuitamente
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
-            <Button size="lg" variant="outline" className="h-12 w-full px-8 text-base sm:w-auto" asChild>
+            <Button size="lg" variant="outline" className="h-12 w-full px-8 text-base sm:w-auto bg-background/50 backdrop-blur-sm" asChild>
               <Link href="#como-funciona">Ver Como Funciona</Link>
             </Button>
           </motion.div>
@@ -75,20 +80,16 @@ export function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.4 }}
-            className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground sm:mt-10 sm:gap-x-8 sm:text-sm"
+            className="mt-10 flex flex-wrap items-center justify-center gap-6 sm:gap-8"
           >
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-success" />
-              <span>Sem taxa de setup</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-success" />
-              <span>Pagamentos via PIX</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-success" />
-              <span>Suporte em português</span>
-            </div>
+            {socialProof.map((item, index) => (
+              <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                  <item.icon className="h-4 w-4 text-primary" />
+                </div>
+                <span>{item.text}</span>
+              </div>
+            ))}
           </motion.div>
         </div>
 
@@ -96,9 +97,10 @@ export function Hero() {
           initial={{ opacity: 0, y: 40 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.8, delay: 0.5 }}
-          className="relative mx-auto mt-12 max-w-4xl sm:mt-16"
+          className="relative mx-auto mt-16 max-w-4xl"
         >
-          <div className="overflow-hidden rounded-2xl border bg-card shadow-lg">
+          <div className="absolute -inset-2 bg-gradient-to-r from-primary/10 via-cyan-400/10 to-primary/10 rounded-3xl blur-2xl" />
+          <div className="relative overflow-hidden rounded-2xl border bg-card shadow-2xl">
             <div className="aspect-video">
               <iframe
                 className="h-full w-full"
@@ -109,7 +111,6 @@ export function Hero() {
               />
             </div>
           </div>
-          <div className="absolute -inset-4 -z-10 bg-gradient-to-r from-primary/20 via-cyan-400/20 to-primary/20 opacity-50 blur-3xl" />
         </motion.div>
       </div>
     </section>

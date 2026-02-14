@@ -82,7 +82,7 @@ export interface Block {
   notes?: string;
   recurring?: {
     frequency: "daily" | "weekly" | "monthly";
-    until: string;
+    until?: string;
   };
 }
 

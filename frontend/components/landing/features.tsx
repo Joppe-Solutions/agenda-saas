@@ -9,47 +9,50 @@ const features = [
   {
     icon: Calendar,
     title: "Calendário Inteligente",
-    description: "Visualize todas as suas reservas em um calendário intuitivo. Evite conflitos e maximize sua ocupação.",
+    description: "Visualize todas as suas reservas em um calendário intuitivo.",
+    badge: "Mais usado",
   },
   {
     icon: CreditCard,
     title: "Pagamentos com PIX",
-    description: "Receba sinais e pagamentos completos via PIX instantâneo. Confirmação automática e segura.",
+    description: "Receba sinais e pagamentos via PIX instantâneo.",
+    badge: "Automação",
   },
   {
     icon: Users,
     title: "Gestão de Clientes",
-    description: "Mantenha um histórico completo dos seus clientes. Preferências, reservas anteriores e contatos.",
+    description: "Mantenha um histórico completo dos seus clientes.",
   },
   {
     icon: BarChart3,
     title: "Relatórios Detalhados",
-    description: "Acompanhe seu faturamento, taxa de ocupação e métricas importantes do seu negócio.",
+    description: "Acompanhe faturamento e métricas importantes.",
   },
   {
     icon: Bell,
     title: "Notificações Automáticas",
-    description: "Envie lembretes por WhatsApp ou e-mail. Reduza no-shows e melhore a comunicação.",
+    description: "Envie lembretes por WhatsApp ou e-mail.",
+    badge: "Novo",
   },
   {
     icon: Smartphone,
     title: "100% Responsivo",
-    description: "Acesse de qualquer dispositivo. Seus clientes podem reservar pelo celular facilmente.",
+    description: "Acesse de qualquer dispositivo.",
   },
   {
     icon: Globe,
     title: "Página Personalizada",
-    description: "Tenha sua própria página de reservas com sua marca. Compartilhe nas redes sociais.",
+    description: "Sua própria página de reservas com sua marca.",
   },
   {
     icon: Shield,
     title: "Seguro e Confiável",
-    description: "Seus dados protegidos com criptografia. Backup automático e disponibilidade 24/7.",
+    description: "Seus dados protegidos com criptografia.",
   },
   {
     icon: Zap,
     title: "Setup Instantâneo",
-    description: "Comece a receber reservas em minutos. Sem complicação, sem código, sem dor de cabeça.",
+    description: "Comece a receber reservas em minutos.",
   },
 ];
 
@@ -58,24 +61,29 @@ export function Features() {
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
   return (
-    <section id="recursos" className="border-t bg-muted/30 py-16 sm:py-24">
-      <div className="container mx-auto max-w-6xl px-4">
+    <section className="relative overflow-hidden py-20 sm:py-28">
+      <div className="absolute inset-0 bg-background" />
+      <div className="absolute inset-0 hero-grid-pattern opacity-30" />
+      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-cyan-400/5 rounded-full blur-[80px] pointer-events-none" />
+
+      <div className="container relative mx-auto max-w-6xl px-4">
         <motion.div
           ref={ref}
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6 }}
-          className="mx-auto max-w-2xl text-center"
+          className="mx-auto max-w-2xl text-center mb-16"
         >
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
-            Tudo que você precisa para gerenciar reservas
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
+            Tudo que você precisa
           </h2>
-          <p className="mt-3 text-sm text-muted-foreground sm:mt-4 sm:text-base lg:text-lg">
-            Ferramentas poderosas e fáceis de usar para transformar a forma como você recebe e gerencia suas reservas.
+          <p className="mt-4 text-muted-foreground text-lg">
+            Ferramentas poderosas para transformar a forma como você gerencia reservas.
           </p>
         </motion.div>
 
-        <div className="mt-10 grid gap-4 sm:mt-16 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature, index) => (
             <motion.div
               key={feature.title}
@@ -83,15 +91,22 @@ export function Features() {
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.5, delay: index * 0.05 }}
             >
-              <Card className="border-0 bg-card/50 shadow-sm transition-all hover:shadow-md hover:border-primary/20">
-                <CardHeader className="pb-2 sm:pb-4">
-                  <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 sm:h-10 sm:w-10">
-                    <feature.icon className="h-4 w-4 text-primary sm:h-5 sm:w-5" />
+              <Card className="h-full border-border/50 bg-card/80 backdrop-blur-sm shadow-sm hover:shadow-md hover:border-primary/20 transition-all">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                      <feature.icon className="h-5 w-5 text-primary" />
+                    </div>
+                    {feature.badge && (
+                      <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">
+                        {feature.badge}
+                      </span>
+                    )}
                   </div>
-                  <CardTitle className="text-base sm:text-lg">{feature.title}</CardTitle>
+                  <CardTitle className="text-lg mt-3">{feature.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <CardDescription className="text-xs leading-relaxed sm:text-sm">
+                  <CardDescription className="text-sm leading-relaxed">
                     {feature.description}
                   </CardDescription>
                 </CardContent>

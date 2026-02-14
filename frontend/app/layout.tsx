@@ -59,8 +59,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <body className="font-sans antialiased">
           <ThemeProvider
             attribute="class"
-            defaultTheme="system"
-            enableSystem
+            defaultTheme="light"
+            enableSystem={false}
             disableTransitionOnChange
           >
             {children}

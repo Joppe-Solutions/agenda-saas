@@ -266,6 +266,58 @@ export async function rescheduleBooking(
   });
 }
 
+export async function retryBookingPayment(bookingId: string) {
+  return request<{
+    ok: boolean;
+    payment: {
+      paymentId: string;
+      qrCode: string;
+      copyPasteCode: string;
+      expiresAt: string;
+    };
+  }>(`/booking/${bookingId}/retry-payment`, {
+    method: "POST",
+  });
+}
+
+export async function getBookingReceipt(bookingId: string) {
+  return request<{
+    booking: {
+      id: string;
+      customerName: string;
+      customerPhone: string;
+      customerEmail?: string;
+      bookingDate: string;
+      startTime?: string;
+      endTime?: string;
+      peopleCount: number;
+      status: string;
+      depositAmount: number;
+      totalAmount: number;
+      createdAt: string;
+    };
+    merchant: {
+      businessName: string;
+      slug: string;
+      whatsappNumber: string;
+      email?: string;
+      address?: string;
+      city?: string;
+      pixKey: string;
+    };
+    resource: {
+      name: string;
+      type: string;
+    };
+    payment?: {
+      id: string;
+      amount: number;
+      status: string;
+      paidAt?: string;
+    };
+  }>(`/booking/${bookingId}/receipt`);
+}
+
 export async function listCustomerTags(merchantId: string) {
   return request<{ tags: CustomerTag[] }>(`/merchant/${merchantId}/customer-tags`);
 }
