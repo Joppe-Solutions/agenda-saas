@@ -1,20 +1,26 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { CalendarDays, DollarSign, Users, TrendingUp, AlertTriangle, Ship, Clock, CheckCircle2, AlertCircle } from "lucide-react";
 import { StatsCard, QuickActions } from "@/components/dashboard";
 import { getDashboardSummary, getTodaysBookings, listMerchantResources } from "@/lib/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import Link from "next/link";
 import { BOOKING_STATUS_LABELS, BOOKING_STATUS_COLORS } from "@/lib/types";
 import type { Booking } from "@/lib/types";
 
 export default async function DashboardPage() {
-  const { userId } = await auth();
+  const { userId, orgId } = await auth();
   if (!userId) {
     redirect("/sign-in?redirect_url=/dashboard");
   }
+
+  if (!orgId) {
+    redirect("/select-org");
+  }
+
+  const merchantId = orgId;
 
   let summary = { bookingsToday: 0, pendingToday: 0, monthRevenue: 0, pendingBookings: 0, totalResources: 0, activeResources: 0 };
   let todaysBookings: Booking[] = [];

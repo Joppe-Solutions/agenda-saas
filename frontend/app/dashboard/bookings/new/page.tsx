@@ -3,10 +3,14 @@ import { redirect } from "next/navigation";
 import { NewBookingPage } from "@/components/dashboard/new-booking-page";
 
 export default async function NewBookingPageWrapper() {
-  const { userId } = await auth();
+  const { userId, orgId } = await auth();
   if (!userId) {
     redirect("/sign-in?redirect_url=/dashboard/bookings/new");
   }
 
-  return <NewBookingPage merchantId={userId} />;
+  if (!orgId) {
+    redirect("/select-org");
+  }
+
+  return <NewBookingPage merchantId={orgId} />;
 }

@@ -3,9 +3,13 @@ import { redirect } from "next/navigation";
 import { BookingCalendar } from "@/components/dashboard/booking-calendar";
 
 export default async function CalendarPage() {
-  const { userId } = await auth();
+  const { userId, orgId } = await auth();
   if (!userId) {
     redirect("/sign-in?redirect_url=/dashboard/calendar");
+  }
+
+  if (!orgId) {
+    redirect("/select-org");
   }
 
   return (
@@ -16,7 +20,7 @@ export default async function CalendarPage() {
           Visualize e gerencie suas reservas em formato de calendário
         </p>
       </div>
-      <BookingCalendar merchantId={userId} />
+      <BookingCalendar merchantId={orgId} />
     </div>
   );
 }

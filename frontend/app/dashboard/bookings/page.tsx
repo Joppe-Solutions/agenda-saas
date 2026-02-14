@@ -8,16 +8,22 @@ import { ReservationsTable } from "@/components/dashboard";
 import { listMerchantBookings } from "@/lib/api";
 
 export default async function DashboardBookingsPage() {
-  const { userId } = await auth();
+  const { userId, orgId } = await auth();
   if (!userId) {
     redirect("/sign-in?redirect_url=/dashboard/bookings");
   }
+
+  if (!orgId) {
+    redirect("/select-org");
+  }
+
+  const merchantId = orgId;
 
   let bookings: Awaited<ReturnType<typeof listMerchantBookings>>["bookings"] = [];
   let hasError = false;
 
   try {
-    const data = await listMerchantBookings(userId);
+    const data = await listMerchantBookings(merchantId);
     bookings = data.bookings;
   } catch (error) {
     console.error("Error fetching bookings:", error);
@@ -121,7 +127,7 @@ export default async function DashboardBookingsPage() {
         </div>
       </div>
 
-      <ReservationsTable initialBookings={bookings} merchantId={userId} />
+      <ReservationsTable initialBookings={bookings} merchantId={merchantId} />
     </div>
   );
 }

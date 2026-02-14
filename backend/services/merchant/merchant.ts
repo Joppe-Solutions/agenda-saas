@@ -265,6 +265,8 @@ interface ClerkWebhookBody {
   type: string;
   data: {
     id: string;
+    name?: string;
+    slug?: string;
     email_addresses?: Array<{
       email_address: string;
       id: string;
@@ -272,6 +274,7 @@ interface ClerkWebhookBody {
     first_name?: string | null;
     last_name?: string | null;
     public_metadata?: Record<string, unknown>;
+    created_by?: string;
   };
 }
 
@@ -280,24 +283,23 @@ export const clerkWebhook = api(
   async (body: ClerkWebhookBody) => {
     const parsed = body;
 
-    if (parsed.type === "user.created") {
-      const { id, email_addresses, first_name, last_name } = parsed.data;
-      const email = email_addresses?.[0]?.email_address;
-      const name = [first_name, last_name].filter(Boolean).join(" ") || "Meu Negócio";
+    if (parsed.type === "organization.created") {
+      const { id, name, slug, created_by } = parsed.data;
+      const orgName = name || "Meu Negócio";
 
-      const baseSlug = id.toLowerCase().replace(/[^a-z0-9]/g, "-").slice(0, 20);
-      let slug = baseSlug;
+      const baseSlug = (slug || id).toLowerCase().replace(/[^a-z0-9]/g, "-").slice(0, 30);
+      let finalSlug = baseSlug;
       let counter = 1;
 
       const existing = await db.queryRow<{ slug: string }>`
-        SELECT slug FROM merchants WHERE slug = ${slug}
+        SELECT slug FROM merchants WHERE slug = ${finalSlug}
       `;
 
       while (existing) {
-        slug = `${baseSlug}-${counter}`;
+        finalSlug = `${baseSlug}-${counter}`;
         counter++;
         const checkAgain = await db.queryRow<{ slug: string }>`
-          SELECT slug FROM merchants WHERE slug = ${slug}
+          SELECT slug FROM merchants WHERE slug = ${finalSlug}
         `;
         if (!checkAgain) break;
       }
@@ -305,17 +307,35 @@ export const clerkWebhook = api(
       await db.exec`
         INSERT INTO merchants (id, slug, business_name, niche, whatsapp_number, pix_key, email, 
                                signal_percentage, signal_deadline_minutes, signal_auto_cancel)
-        VALUES (${id}, ${slug}, ${name}, 'SERVICES', '', '', ${email ?? null}, 50, 120, true)
+        VALUES (${id}, ${finalSlug}, ${orgName}, 'SERVICES', '', '', null, 50, 120, true)
       `;
 
-      return { ok: true, created: true };
+      return { ok: true, created: true, orgId: id };
     }
 
-    if (parsed.type === "user.deleted") {
+    if (parsed.type === "organization.updated") {
+      const { id, name, slug } = parsed.data;
+      
+      if (name) {
+        await db.exec`
+          UPDATE merchants 
+          SET business_name = ${name}, updated_at = now()
+          WHERE id = ${id}
+        `;
+      }
+
+      return { ok: true, updated: true };
+    }
+
+    if (parsed.type === "organization.deleted") {
       await db.exec`
         DELETE FROM merchants WHERE id = ${parsed.data.id}
       `;
       return { ok: true, deleted: true };
+    }
+
+    if (parsed.type === "user.deleted") {
+      return { ok: true };
     }
 
     return { ok: true };

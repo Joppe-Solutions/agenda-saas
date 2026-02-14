@@ -3,10 +3,14 @@ import { redirect } from "next/navigation";
 import { ReportsPage } from "@/components/dashboard/reports-page";
 
 export default async function ReportsPageWrapper() {
-  const { userId } = await auth();
+  const { userId, orgId } = await auth();
   if (!userId) {
     redirect("/sign-in?redirect_url=/dashboard/reports");
   }
 
-  return <ReportsPage merchantId={userId} />;
+  if (!orgId) {
+    redirect("/select-org");
+  }
+
+  return <ReportsPage merchantId={orgId} />;
 }

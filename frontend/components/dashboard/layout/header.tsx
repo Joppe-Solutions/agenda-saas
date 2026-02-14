@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, OrganizationSwitcher } from "@clerk/nextjs";
 import { Bell, Menu, Search, Plus } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,24 @@ export function DashboardHeader() {
           <MobileNav />
         </SheetContent>
       </Sheet>
+
+      <div className="hidden lg:flex items-center gap-3">
+        <OrganizationSwitcher
+          afterCreateOrganizationUrl="/dashboard"
+          afterLeaveOrganizationUrl="/select-org"
+          afterSelectOrganizationUrl="/dashboard"
+          appearance={{
+            elements: {
+              rootBox: "flex items-center justify-center",
+              organizationSwitcherTrigger: "px-3 py-2 rounded-lg border bg-background hover:bg-accent flex items-center gap-2 text-sm font-medium",
+              organizationSwitcherPopoverCard: "rounded-xl border shadow-lg",
+              organizationPreviewMainIdentifier: "font-semibold",
+              organizationPreviewAvatarContainer: "h-6 w-6",
+              organizationPreviewAvatar: "h-6 w-6",
+            },
+          }}
+        />
+      </div>
 
       <div className="hidden flex-1 md:block">
         <div className="relative max-w-md">

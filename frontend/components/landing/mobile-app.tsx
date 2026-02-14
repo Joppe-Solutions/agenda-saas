@@ -28,23 +28,23 @@ export function MobileApp() {
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
   return (
-    <section className="relative overflow-hidden py-28 px-4 bg-dark-section" id="app">
-      <div className="absolute inset-0 gradient-dark-section" />
-      <div className="absolute inset-0 premium-grid opacity-15" />
-      <div className="absolute inset-0 led-dots opacity-20" />
-      
-      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-cyan-400/10 rounded-full blur-[80px] pointer-events-none" />
-
-      <div className="max-w-6xl mx-auto">
+    <section className="relative overflow-hidden py-20 sm:py-28 bg-muted/30" id="app">
+      <div className="container mx-auto max-w-6xl px-4">
         <motion.div
           ref={ref}
           initial={{ opacity: 0, y: 40 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          className="relative rounded-3xl overflow-hidden card-dark"
+          className="relative rounded-3xl overflow-hidden"
         >
-          <div className="relative p-8 md:p-16">
+          <div className="absolute inset-0 gradient-dark-section" />
+          <div className="absolute inset-0 premium-grid opacity-15" />
+          <div className="absolute inset-0 led-dots opacity-20" />
+          
+          <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
+          <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-cyan-400/10 rounded-full blur-[80px] pointer-events-none" />
+
+          <div className="relative p-8 md:p-12 lg:p-16">
             <div className="flex flex-col md:flex-row items-center gap-12 lg:gap-20">
               <div className="flex-1">
                 <motion.div
@@ -63,7 +63,7 @@ export function MobileApp() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: 0.3 }}
-                  className="text-3xl sm:text-4xl lg:text-5xl font-bold text-dark-fg mb-2 tracking-tight leading-tight"
+                  className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-2 tracking-tight leading-tight"
                 >
                   Leve o reserva.online
                 </motion.h2>
@@ -82,7 +82,7 @@ export function MobileApp() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: 0.4 }}
-                  className="text-dark-muted mb-10 max-w-md leading-relaxed"
+                  className="text-slate-400 mb-10 max-w-md leading-relaxed"
                 >
                   Baixe nosso aplicativo e tenha controle total das suas reservas
                   onde você estiver. Disponível para Android e iOS.
@@ -102,8 +102,8 @@ export function MobileApp() {
                         <feature.icon className="w-5 h-5 text-primary" strokeWidth={1.5} />
                       </div>
                       <div>
-                        <h3 className="text-base font-semibold text-dark-fg mb-1">{feature.title}</h3>
-                        <p className="text-sm text-dark-muted leading-relaxed">{feature.description}</p>
+                        <h3 className="text-base font-semibold text-white mb-1">{feature.title}</h3>
+                        <p className="text-sm text-slate-400 leading-relaxed">{feature.description}</p>
                       </div>
                     </motion.div>
                   ))}
@@ -127,7 +127,7 @@ export function MobileApp() {
                   </Link>
                   <Link
                     href="#"
-                    className="inline-flex items-center gap-2.5 px-5 py-3 bg-dark-card border border-dark-border text-dark-fg rounded-xl font-medium text-sm hover:bg-dark-muted/50 transition-colors"
+                    className="inline-flex items-center gap-2.5 px-5 py-3 bg-slate-800 border border-slate-700 text-white rounded-xl font-medium text-sm hover:bg-slate-700 transition-colors"
                   >
                     <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
                       <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 01-.61-.92V2.734a1 1 0 01.609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.199l2.302 2.302a1 1 0 010 1.38l-2.302 2.302L15.065 12l2.633-2.492zM5.864 2.658L16.8 8.99l-2.302 2.302-8.634-8.634z" />
@@ -147,18 +147,18 @@ export function MobileApp() {
                 <div className="relative">
                   <div className="absolute -inset-8 bg-primary/10 rounded-full blur-[60px] pointer-events-none" />
 
-                  <div className="relative w-[280px] h-[560px] bg-dark-muted rounded-[3rem] border-2 border-dark-border shadow-2xl overflow-hidden p-3">
-                    <div className="absolute top-3 left-1/2 -translate-x-1/2 w-28 h-6 bg-dark-muted rounded-full z-20" />
+                  <div className="relative w-[280px] h-[560px] bg-slate-800 rounded-[3rem] border-2 border-slate-700 shadow-2xl overflow-hidden p-3">
+                    <div className="absolute top-3 left-1/2 -translate-x-1/2 w-28 h-6 bg-slate-800 rounded-full z-20" />
 
-                    <div className="w-full h-full rounded-[2.5rem] bg-gradient-to-b from-dark-card to-dark-muted overflow-hidden flex flex-col">
+                    <div className="w-full h-full rounded-[2.5rem] bg-gradient-to-b from-slate-700 to-slate-800 overflow-hidden flex flex-col">
                       <div className="pt-10 px-6 pb-4 text-center">
                         <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center mx-auto mb-3">
                           <CalendarCheck className="w-7 h-7 text-primary" />
                         </div>
-                        <p className="text-dark-fg font-semibold text-lg">
+                        <p className="text-white font-semibold text-lg">
                           reserva.online
                         </p>
-                        <p className="text-dark-muted text-sm mt-0.5">5 reservas hoje</p>
+                        <p className="text-slate-400 text-sm mt-0.5">5 reservas hoje</p>
                       </div>
 
                       <div className="flex-1 px-4 pb-6 space-y-3 overflow-hidden">
@@ -169,7 +169,7 @@ export function MobileApp() {
                         ].map((item) => (
                           <div
                             key={item.name}
-                            className="flex items-center gap-3 p-3.5 rounded-2xl bg-dark-card/50 border border-dark-border"
+                            className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-900/50 border border-slate-700"
                           >
                             <div
                               className="w-10 h-10 rounded-xl flex items-center justify-center font-semibold text-sm"
@@ -178,8 +178,8 @@ export function MobileApp() {
                               {item.name.charAt(0)}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-dark-fg truncate">{item.name}</p>
-                              <p className="text-xs text-dark-muted">{item.time}</p>
+                              <p className="text-sm font-medium text-white truncate">{item.name}</p>
+                              <p className="text-xs text-slate-400">{item.time}</p>
                             </div>
                             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
                           </div>
