@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
+import { ptBR } from "@clerk/localizations";
+import type { ComponentProps } from "react";
 import { Inter } from "next/font/google";
 import { JivoChat } from "@/components/jivo-chat";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
+
+const clerkLocalization = ptBR as unknown as ComponentProps<typeof ClerkProvider>["localization"];
 
 export const metadata: Metadata = {
   title: "reserva.online - Sistema de Reservas Online",
@@ -19,7 +23,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider localization={clerkLocalization}>
       <html lang="pt-BR">
         <body className={inter.className}>
           {children}

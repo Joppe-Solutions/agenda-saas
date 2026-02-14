@@ -4,5 +4,6 @@ export { Features } from "./features";
 export { HowItWorks } from "./how-it-works";
 export { UseCases } from "./use-cases";
 export { Pricing } from "./pricing";
+export { MobileApp } from "./mobile-app";
 export { CTA } from "./cta";
 export { Footer } from "./footer";

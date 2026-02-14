@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { CalendarCheck } from "lucide-react";
 
 const footerLinks = {
@@ -86,6 +87,44 @@ export function Footer() {
                 </li>
               ))}
             </ul>
+          </div>
+        </div>
+
+        {/* App Download Section */}
+        <div className="mt-8 flex flex-col items-center justify-between gap-4 rounded-xl border bg-muted/50 p-6 sm:mt-10 sm:flex-row">
+          <div className="text-center sm:text-left">
+            <h3 className="font-semibold">Baixe o aplicativo</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Gerencie suas reservas pelo celular
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href="#"
+              className="transition-transform hover:scale-105"
+              aria-label="Baixar na App Store"
+            >
+              <Image
+                src="/images/app-store-badge.png"
+                alt="Disponível na App Store"
+                width={120}
+                height={36}
+                className="h-[36px] w-auto"
+              />
+            </Link>
+            <Link
+              href="#"
+              className="transition-transform hover:scale-105"
+              aria-label="Baixar no Google Play"
+            >
+              <Image
+                src="/images/google-play-badge.png"
+                alt="Disponível no Google Play"
+                width={120}
+                height={36}
+                className="h-[36px] w-auto"
+              />
+            </Link>
           </div>
         </div>
 
