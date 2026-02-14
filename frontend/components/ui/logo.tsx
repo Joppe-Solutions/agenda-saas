@@ -1,10 +1,15 @@
+"use client";
+
 import Image from "next/image";
+import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
 
 interface LogoProps {
   variant?: "full" | "icon";
   size?: "sm" | "md" | "lg";
   className?: string;
+  forceTheme?: "light" | "dark";
 }
 
 const sizes = {
@@ -13,14 +18,28 @@ const sizes = {
   lg: { icon: 32, full: 40 },
 };
 
-export function Logo({ variant = "full", size = "md", className }: LogoProps) {
+export function Logo({ variant = "full", size = "md", className, forceTheme }: LogoProps) {
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const height = sizes[size][variant];
+  
+  const isDark = forceTheme ? forceTheme === "dark" : mounted && resolvedTheme === "dark";
+  const logoSrc = variant === "icon" 
+    ? "/brand/logo-icon.png" 
+    : isDark 
+      ? "/brand/logo-full-dark.png" 
+      : "/brand/logo-full.png";
 
   if (variant === "icon") {
     return (
       <div className={cn("relative", className)} style={{ width: height, height }}>
         <Image
-          src="/brand/logo-icon.png"
+          src={logoSrc}
           alt="reserva.online"
           fill
           className="object-contain"
@@ -33,7 +52,7 @@ export function Logo({ variant = "full", size = "md", className }: LogoProps) {
   return (
     <div className={cn("relative", className)} style={{ width: height * 3.5, height }}>
       <Image
-        src="/brand/logo-full.png"
+        src={logoSrc}
         alt="reserva.online"
         fill
         className="object-contain"

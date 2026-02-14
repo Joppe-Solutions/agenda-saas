@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { CheckCircle2 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 
@@ -12,8 +13,16 @@ const features = [
 export function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
-      <div className="relative hidden bg-gradient-to-br from-navy-900 via-navy-800 to-navy-950 lg:block">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-cyan-500/20 via-transparent to-transparent" />
+      <div className="relative hidden lg:block">
+        <Image
+          src="/hero-bg.png"
+          alt=""
+          fill
+          className="object-cover object-center"
+          priority
+          quality={90}
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-navy-950/90 via-navy-900/80 to-navy-950/95" />
         <div className="relative flex h-full flex-col justify-between p-12 text-white">
           <Link href="/" className="flex items-center">
             <Logo variant="full" size="md" />
