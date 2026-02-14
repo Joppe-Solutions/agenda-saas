@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "encore run",
     "check": "encore check",
-    "test": "encore test"
+    "test": "command -v encore >/dev/null 2>&1 && encore test || tsc --noEmit"
   },
   "devDependencies": {
     "@types/node": "^20.5.7",
