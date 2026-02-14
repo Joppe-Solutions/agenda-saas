@@ -50,6 +50,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         baseTheme: undefined,
         variables: clerkTheme.variables,
         elements: clerkTheme.elements,
+        layout: {
+          logoImageUrl: "/brand/logo-icon.png",
+        },
       }}
     >
       <html lang="pt-BR" className={inter.variable} suppressHydrationWarning>

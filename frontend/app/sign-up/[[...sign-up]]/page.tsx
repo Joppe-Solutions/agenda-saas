@@ -6,7 +6,13 @@ export default function SignUpPage() {
   return (
     <AuthLayout>
       <SignUp 
-        appearance={{ elements: clerkTheme.elements, variables: clerkTheme.variables }}
+        appearance={{ 
+          elements: clerkTheme.elements, 
+          variables: clerkTheme.variables,
+          layout: {
+            logoImageUrl: "/brand/logo-icon.png",
+          },
+        }}
         forceRedirectUrl="/dashboard" 
       />
     </AuthLayout>

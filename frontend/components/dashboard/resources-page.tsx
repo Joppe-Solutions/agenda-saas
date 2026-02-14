@@ -56,10 +56,26 @@ export function ResourcesPage({ merchantId }: ResourcesPageProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const [saving, setSaving] = useState(false);
-  const [wizardStep, setWizardStep] = useState<"template" | "details" | "availability">("template");
+  const [wizardStep, setWizardStep] = useState<"template" | "details" | "availability" | "blocks">("template");
   const [selectedTemplate, setSelectedTemplate] = useState<ResourceTemplate | null>(null);
   const [availabilityRules, setAvailabilityRulesState] = useState<AvailabilityRule[]>([]);
   const [blocks, setBlocks] = useState<Block[]>([]);
+  const [blockDialogOpen, setBlockDialogOpen] = useState(false);
+  const [newBlock, setNewBlock] = useState<{
+    startDate: string;
+    startTime: string;
+    endDate: string;
+    endTime: string;
+    reason: BlockReason;
+    notes: string;
+  }>({
+    startDate: "",
+    startTime: "08:00",
+    endDate: "",
+    endTime: "18:00",
+    reason: "maintenance",
+    notes: "",
+  });
 
   const [formData, setFormData] = useState({
     name: "",
@@ -276,6 +292,47 @@ export function ResourcesPage({ merchantId }: ResourcesPageProps) {
     }
   };
 
+  const handleCreateBlock = async () => {
+    if (!selectedResource || !newBlock.startDate || !newBlock.endDate) return;
+    setSaving(true);
+    try {
+      await createBlock({
+        resourceId: selectedResource.id,
+        startTime: `${newBlock.startDate}T${newBlock.startTime}:00`,
+        endTime: `${newBlock.endDate}T${newBlock.endTime}:00`,
+        reason: newBlock.reason,
+        notes: newBlock.notes || undefined,
+      });
+      const blocksData = await listBlocks(selectedResource.id);
+      setBlocks(blocksData.blocks);
+      setBlockDialogOpen(false);
+      setNewBlock({
+        startDate: "",
+        startTime: "08:00",
+        endDate: "",
+        endTime: "18:00",
+        reason: "maintenance",
+        notes: "",
+      });
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao criar bloqueio");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteBlock = async (blockId: string) => {
+    if (!selectedResource) return;
+    try {
+      await deleteBlock(blockId);
+      const blocksData = await listBlocks(selectedResource.id);
+      setBlocks(blocksData.blocks);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -419,11 +476,12 @@ export function ResourcesPage({ merchantId }: ResourcesPageProps) {
             </div>
           )}
 
-          {(wizardStep === "details" || wizardStep === "availability") && (
+          {(wizardStep === "details" || wizardStep === "availability" || wizardStep === "blocks") && (
             <Tabs value={wizardStep} onValueChange={(v) => setWizardStep(v as typeof wizardStep)}>
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="details">Detalhes</TabsTrigger>
                 <TabsTrigger value="availability">Disponibilidade</TabsTrigger>
+                <TabsTrigger value="blocks">Bloqueios</TabsTrigger>
               </TabsList>
 
               <TabsContent value="details" className="space-y-4 py-4">
@@ -603,6 +661,134 @@ export function ResourcesPage({ merchantId }: ResourcesPageProps) {
                   ))}
                 </div>
               </TabsContent>
+
+              <TabsContent value="blocks" className="space-y-4 py-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h4 className="font-medium">Bloqueios de Horário</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Períodos em que o recurso não estará disponível
+                    </p>
+                  </div>
+                  <Button size="sm" onClick={() => setBlockDialogOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Novo Bloqueio
+                  </Button>
+                </div>
+
+                {blocks.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Calendar className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                    <p>Nenhum bloqueio cadastrado</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {blocks.map((block) => (
+                      <div key={block.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                        <div>
+                          <p className="font-medium text-sm">
+                            {new Date(block.startTime).toLocaleDateString("pt-BR")}{" "}
+                            {new Date(block.startTime).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                            {" - "}
+                            {new Date(block.endTime).toLocaleDateString("pt-BR")}{" "}
+                            {new Date(block.endTime).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {block.reason === "maintenance" && "Manutenção"}
+                            {block.reason === "vacation" && "Folga/Férias"}
+                            {block.reason === "weather" && "Clima"}
+                            {block.reason === "other" && "Outro"}
+                            {block.notes && ` - ${block.notes}`}
+                          </p>
+                        </div>
+                        <Button variant="ghost" size="sm" onClick={() => handleDeleteBlock(block.id)}>
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <Dialog open={blockDialogOpen} onOpenChange={setBlockDialogOpen}>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Novo Bloqueio</DialogTitle>
+                      <DialogDescription>
+                        Defina um período em que o recurso não estará disponível
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Data Início</Label>
+                          <Input
+                            type="date"
+                            value={newBlock.startDate}
+                            onChange={(e) => setNewBlock({ ...newBlock, startDate: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Horário Início</Label>
+                          <Input
+                            type="time"
+                            value={newBlock.startTime}
+                            onChange={(e) => setNewBlock({ ...newBlock, startTime: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Data Fim</Label>
+                          <Input
+                            type="date"
+                            value={newBlock.endDate}
+                            onChange={(e) => setNewBlock({ ...newBlock, endDate: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Horário Fim</Label>
+                          <Input
+                            type="time"
+                            value={newBlock.endTime}
+                            onChange={(e) => setNewBlock({ ...newBlock, endTime: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Motivo</Label>
+                        <Select
+                          value={newBlock.reason}
+                          onValueChange={(v) => setNewBlock({ ...newBlock, reason: v as BlockReason })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="maintenance">Manutenção</SelectItem>
+                            <SelectItem value="vacation">Folga/Férias</SelectItem>
+                            <SelectItem value="weather">Clima</SelectItem>
+                            <SelectItem value="other">Outro</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Observações</Label>
+                        <Input
+                          value={newBlock.notes}
+                          onChange={(e) => setNewBlock({ ...newBlock, notes: e.target.value })}
+                          placeholder="Opcional"
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setBlockDialogOpen(false)}>Cancelar</Button>
+                      <Button onClick={handleCreateBlock} disabled={saving || !newBlock.startDate || !newBlock.endDate}>
+                        {saving ? "Salvando..." : "Criar Bloqueio"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </TabsContent>
             </Tabs>
           )}
 
@@ -615,8 +801,8 @@ export function ResourcesPage({ merchantId }: ResourcesPageProps) {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Cancelar
             </Button>
-            {wizardStep === "availability" && (
-              <Button onClick={handleSave} disabled={saving || !formData.name} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+            {(wizardStep === "availability" || wizardStep === "blocks") && (
+              <Button onClick={handleSave} disabled={saving || !formData.name} className="bg-brand-yellow hover:bg-brand-yellow/90 text-brand-blue-950">
                 {saving ? "Salvando..." : "Salvar Recurso"}
               </Button>
             )}

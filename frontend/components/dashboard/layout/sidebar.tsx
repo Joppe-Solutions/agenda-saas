@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, CalendarDays, Ship, Settings, HelpCircle, CreditCard, BarChart3 } from "lucide-react";
+import { LayoutDashboard, CalendarDays, Ship, Settings, HelpCircle, CreditCard, BarChart3, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/ui/logo";
 
 const navigation = [
   { name: "Visão Geral", href: "/dashboard", icon: LayoutDashboard },
   { name: "Reservas", href: "/dashboard/bookings", icon: CalendarDays },
+  { name: "Calendário", href: "/dashboard/calendar", icon: Calendar },
   { name: "Recursos", href: "/dashboard/assets", icon: Ship },
   { name: "Pagamentos", href: "/dashboard/payments", icon: CreditCard },
   { name: "Relatórios", href: "/dashboard/reports", icon: BarChart3 },
