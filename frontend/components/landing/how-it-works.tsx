@@ -2,7 +2,7 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
-import { UserPlus, Settings, Share2, Banknote, CheckCircle2 } from "lucide-react";
+import { UserPlus, Settings, Share2, Banknote } from "lucide-react";
 
 const steps = [
   {
@@ -36,9 +36,7 @@ export function HowItWorks() {
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
   return (
-    <section id="como-funciona" className="relative overflow-hidden py-20 sm:py-28 bg-muted/30">
-      <div className="absolute inset-0" />
-      
+    <section id="como-funciona" className="relative overflow-hidden py-20 sm:py-28 bg-background">
       <div className="container mx-auto max-w-6xl px-4">
         <motion.div
           ref={ref}
@@ -65,7 +63,7 @@ export function HowItWorks() {
               className="flex gap-4"
             >
               <div className="flex flex-col items-center">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md">
                   <step.icon className="h-6 w-6" />
                 </div>
                 {index < steps.length - 1 && (
@@ -103,7 +101,7 @@ export function HowItWorks() {
                       index % 2 === 1 ? "flex-row-reverse" : ""
                     }`}
                   >
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md">
                       <step.icon className="h-6 w-6" />
                     </div>
                     <div>

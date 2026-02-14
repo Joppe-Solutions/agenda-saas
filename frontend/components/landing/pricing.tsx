@@ -65,6 +65,15 @@ const plans = [
   },
 ];
 
+const comparison = [
+  { feature: "Reservas/mês", free: "20", pro: "Ilimitado", enterprise: "Ilimitado" },
+  { feature: "Recursos", free: "1", pro: "10", enterprise: "Ilimitado" },
+  { feature: "PIX automático", free: false, pro: true, enterprise: true },
+  { feature: "Relatórios", free: false, pro: true, enterprise: true },
+  { feature: "API", free: false, pro: false, enterprise: true },
+  { feature: "Suporte", free: "E-mail", pro: "Prioritário", enterprise: "Dedicado" },
+];
+
 export function Pricing() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
@@ -87,18 +96,19 @@ export function Pricing() {
           </p>
         </motion.div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-6 lg:grid-cols-3 items-start">
           {plans.map((plan, index) => (
             <motion.div
               key={plan.name}
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.5, delay: index * 0.1 }}
+              className={plan.popular ? "lg:-mt-4 lg:mb-4" : ""}
             >
               <Card
                 className={`relative flex flex-col h-full ${
                   plan.popular
-                    ? "border-primary shadow-lg shadow-primary/10 scale-105 lg:scale-110 z-10"
+                    ? "border-primary shadow-lg shadow-primary/10 ring-1 ring-primary/20"
                     : "border-border/50 shadow-sm"
                 }`}
               >
@@ -134,7 +144,7 @@ export function Pricing() {
                 <CardFooter>
                   <Button 
                     variant={plan.variant} 
-                    className={`w-full text-sm ${plan.popular ? "shadow-lg" : ""}`} 
+                    className={`w-full text-sm ${plan.popular ? "shadow-md" : ""}`} 
                     asChild
                   >
                     <Link href="/sign-up">{plan.cta}</Link>
@@ -144,6 +154,52 @@ export function Pricing() {
             </motion.div>
           ))}
         </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="mt-16 overflow-x-auto"
+        >
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b">
+                <th className="py-3 text-left font-medium">Recurso</th>
+                <th className="py-3 text-center font-medium">Gratuito</th>
+                <th className="py-3 text-center font-medium text-primary">Profissional</th>
+                <th className="py-3 text-center font-medium">Empresarial</th>
+              </tr>
+            </thead>
+            <tbody>
+              {comparison.map((row, i) => (
+                <tr key={i} className="border-b border-border/50">
+                  <td className="py-3 text-muted-foreground">{row.feature}</td>
+                  <td className="py-3 text-center">
+                    {typeof row.free === "boolean" ? (
+                      row.free ? <Check className="h-4 w-4 mx-auto text-green-500" /> : <X className="h-4 w-4 mx-auto text-muted-foreground/30" />
+                    ) : (
+                      row.free
+                    )}
+                  </td>
+                  <td className="py-3 text-center font-medium">
+                    {typeof row.pro === "boolean" ? (
+                      row.pro ? <Check className="h-4 w-4 mx-auto text-primary" /> : <X className="h-4 w-4 mx-auto text-muted-foreground/30" />
+                    ) : (
+                      row.pro
+                    )}
+                  </td>
+                  <td className="py-3 text-center">
+                    {typeof row.enterprise === "boolean" ? (
+                      row.enterprise ? <Check className="h-4 w-4 mx-auto text-green-500" /> : <X className="h-4 w-4 mx-auto text-muted-foreground/30" />
+                    ) : (
+                      row.enterprise
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </motion.div>
 
         <p className="mt-12 text-center text-sm text-muted-foreground">
           Todos os planos incluem SSL grátis, backups diários e atualizações automáticas.

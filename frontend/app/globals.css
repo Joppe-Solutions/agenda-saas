@@ -30,6 +30,14 @@
     --chart-4: 142 71% 45%;
     --chart-5: 215 16% 65%;
     
+    /* Dark section colors (fixed, not theme-dependent) */
+    --dark-bg: 224 75% 12%;
+    --dark-fg: 210 40% 98%;
+    --dark-muted: 228 73% 24%;
+    --dark-border: 226 70% 30%;
+    --dark-card: 228 73% 18%;
+    
+    /* Brand colors */
     --brand-blue-50: 230 100% 96%;
     --brand-blue-100: 226 100% 93%;
     --brand-blue-200: 222 97% 89%;
@@ -122,6 +130,42 @@
     border-radius: 3px;
   }
   
+  /* Dark section backgrounds */
+  .bg-dark-section {
+    background-color: hsl(var(--dark-bg));
+    color: hsl(var(--dark-fg));
+  }
+  
+  .bg-dark-card {
+    background-color: hsl(var(--dark-card));
+  }
+  
+  .border-dark {
+    border-color: hsl(var(--dark-border));
+  }
+  
+  .text-dark-fg {
+    color: hsl(var(--dark-fg));
+  }
+  
+  .text-dark-muted {
+    color: hsl(213 16% 70%);
+  }
+  
+  /* LED dot pattern for dark sections */
+  .led-dots {
+    background-image: radial-gradient(circle, hsl(var(--primary) / 0.15) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  
+  /* Premium grid pattern */
+  .premium-grid {
+    background-image: 
+      linear-gradient(to right, hsl(215 25% 27% / 0.3) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(215 25% 27% / 0.3) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  
   .gradient-mesh {
     background:
       radial-gradient(at 40% 20%, hsl(var(--brand-blue-500) / 0.1) 0px, transparent 50%),
@@ -145,11 +189,25 @@
   
   .hero-grid-pattern {
     background-image: 
-      linear-gradient(to right, hsl(var(--border) / 0.3) 1px, transparent 1px),
-      linear-gradient(to bottom, hsl(var(--border) / 0.3) 1px, transparent 1px);
+      linear-gradient(to right, hsl(215 25% 27% / 0.4) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(215 25% 27% / 0.4) 1px, transparent 1px);
     background-size: 48px 48px;
     mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
     -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
+  }
+  
+  /* Gradient for dark sections */
+  .gradient-dark-section {
+    background: linear-gradient(180deg, hsl(224 75% 12%) 0%, hsl(228 73% 16%) 100%);
+  }
+  
+  /* Glow effects */
+  .glow-primary {
+    box-shadow: 0 0 60px hsl(var(--primary) / 0.15);
+  }
+  
+  .glow-cyan {
+    box-shadow: 0 0 80px hsl(var(--brand-cyan-500) / 0.1);
   }
   
   .shadow-sm {
@@ -160,6 +218,14 @@
   }
   .shadow-lg {
     box-shadow: 0 14px 40px rgba(2, 6, 23, 0.14);
+  }
+  .shadow-xl {
+    box-shadow: 0 20px 60px rgba(2, 6, 23, 0.20);
+  }
+  
+  /* Sidebar dark */
+  .sidebar-dark {
+    background: linear-gradient(180deg, hsl(224 75% 12%) 0%, hsl(228 73% 15%) 100%);
   }
 }
 
@@ -181,5 +247,16 @@
   }
   .badge-highlight {
     @apply bg-[#CFF6FF] text-[#003B52];
+  }
+  
+  /* Premium card for dark sections */
+  .card-dark {
+    background: hsl(228 73% 18% / 0.8);
+    border: 1px solid hsl(226 70% 30% / 0.5);
+    backdrop-filter: blur(8px);
+  }
+  
+  .card-dark:hover {
+    border-color: hsl(var(--primary) / 0.3);
   }
 }
