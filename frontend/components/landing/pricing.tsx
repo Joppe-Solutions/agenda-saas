@@ -15,9 +15,9 @@ const plans = [
     price: "R$ 0",
     period: "/mês",
     features: [
-      { text: "Até 20 reservas/mês", included: true },
-      { text: "1 recurso cadastrado", included: true },
-      { text: "Página de reservas", included: true },
+      { text: "Até 20 agendamentos/mês", included: true },
+      { text: "Até 3 serviços", included: true },
+      { text: "Página de agendamentos", included: true },
       { text: "Notificações WhatsApp", included: true },
       { text: "Suporte por e-mail", included: true },
       { text: "PIX automático", included: false },
@@ -33,9 +33,9 @@ const plans = [
     price: "R$ 79",
     period: "/mês",
     features: [
-      { text: "Reservas ilimitadas", included: true },
-      { text: "Até 10 recursos", included: true },
-      { text: "Página de reservas", included: true },
+      { text: "Agendamentos ilimitados", included: true },
+      { text: "Até 20 serviços", included: true },
+      { text: "Página de agendamentos", included: true },
       { text: "Notificações WhatsApp", included: true },
       { text: "PIX automático", included: true },
       { text: "Relatórios e métricas", included: true },
@@ -51,8 +51,8 @@ const plans = [
     price: "Sob consulta",
     period: "",
     features: [
-      { text: "Reservas ilimitadas", included: true },
-      { text: "Recursos ilimitados", included: true },
+      { text: "Agendamentos ilimitados", included: true },
+      { text: "Serviços ilimitados", included: true },
       { text: "Múltiplos usuários", included: true },
       { text: "API de integração", included: true },
       { text: "Relatórios avançados", included: true },
@@ -66,8 +66,9 @@ const plans = [
 ];
 
 const comparison = [
-  { feature: "Reservas/mês", free: "20", pro: "Ilimitado", enterprise: "Ilimitado" },
-  { feature: "Recursos", free: "1", pro: "10", enterprise: "Ilimitado" },
+  { feature: "Agendamentos/mês", free: "20", pro: "Ilimitado", enterprise: "Ilimitado" },
+  { feature: "Serviços", free: "3", pro: "20", enterprise: "Ilimitado" },
+  { feature: "Profissionais", free: "1", pro: "5", enterprise: "Ilimitado" },
   { feature: "PIX automático", free: false, pro: true, enterprise: true },
   { feature: "Relatórios", free: false, pro: true, enterprise: true },
   { feature: "API", free: false, pro: false, enterprise: true },

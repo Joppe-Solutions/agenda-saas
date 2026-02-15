@@ -3,68 +3,68 @@
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import Image from "next/image";
-import { CheckCircle2, Ship, Dumbbell, Camera, Briefcase, Home, Car } from "lucide-react";
+import { CheckCircle2, Scissors, Stethoscope, Heart, GraduationCap, Wrench, PawPrint } from "lucide-react";
 
 const useCases = [
   {
-    title: "Barcos e Pescaria",
-    description: "Alugue barcos para pesca esportiva, passeios ou mergulho.",
-    image: "/images/barcos_e_pescaria.jpg",
-    icon: Ship,
+    title: "Beleza e Estética",
+    description: "Salões de beleza, barbearias, clínicas de estética e nail designers.",
+    image: "/images/beleza_estetica.jpg",
+    icon: Scissors,
+    color: "from-pink-500",
+    iconBg: "bg-pink-500/20",
+    iconColor: "text-pink-400",
+  },
+  {
+    title: "Saúde e Clínicas",
+    description: "Consultórios médicos, clínicas odontológicas, psicólogos e terapeutas.",
+    image: "/images/saude_clinicas.jpg",
+    icon: Stethoscope,
     color: "from-blue-500",
     iconBg: "bg-blue-500/20",
     iconColor: "text-blue-400",
   },
   {
-    title: "Quadras e Esportes",
-    description: "Reserve quadras de tênis, futebol, vôlei ou academias.",
-    image: "/images/quadras_e_esportes.jpg",
-    icon: Dumbbell,
+    title: "Bem-estar e Fitness",
+    description: "Estúdios de yoga, pilates, academias, massoterapia e spas.",
+    image: "/images/bem_estar.jpg",
+    icon: Heart,
     color: "from-green-500",
     iconBg: "bg-green-500/20",
     iconColor: "text-green-400",
   },
   {
-    title: "Estúdios e Espaços",
-    description: "Alugue estúdios de fotografia, coworking ou salas.",
-    image: "/images/estudios_e_espacos.jpg",
-    icon: Camera,
+    title: "Educação e Consultoria",
+    description: "Aulas particulares, tutoria, coachings e consultorias diversas.",
+    image: "/images/educacao.jpg",
+    icon: GraduationCap,
     color: "from-purple-500",
     iconBg: "bg-purple-500/20",
     iconColor: "text-purple-400",
   },
   {
-    title: "Imóveis por Temporada",
-    description: "Gerencie reservas de casas, chalés e apartamentos.",
-    image: "/images/imoveis_por_temporada.jpg",
-    icon: Home,
+    title: "Serviços Gerais",
+    description: "Reparos, limpeza, fotógrafos, eventos e outros serviços.",
+    image: "/images/servicos_gerais.jpg",
+    icon: Wrench,
     color: "from-orange-500",
     iconBg: "bg-orange-500/20",
     iconColor: "text-orange-400",
   },
   {
-    title: "Veículos e Transporte",
-    description: "Alugue carros, motos, bikes ou ofereça transfers.",
-    image: "/images/veiculos_e_transporte.jpg",
-    icon: Car,
-    color: "from-red-500",
-    iconBg: "bg-red-500/20",
-    iconColor: "text-red-400",
-  },
-  {
-    title: "Serviços e Consultorias",
-    description: "Agende consultas, sessões de terapia ou mentorias.",
-    image: "/images/servicos_e_consultorias.jpg",
-    icon: Briefcase,
-    color: "from-indigo-500",
-    iconBg: "bg-indigo-500/20",
-    iconColor: "text-indigo-400",
+    title: "Pet Shops e Veterinários",
+    description: "Pet shops, clínicas veterinárias, dog walkers e banho e tosa.",
+    image: "/images/pet_services.jpg",
+    icon: PawPrint,
+    color: "from-amber-500",
+    iconBg: "bg-amber-500/20",
+    iconColor: "text-amber-400",
   },
 ];
 
 const stats = [
   { value: "10.000+", label: "Negócios atendidos" },
-  { value: "500.000+", label: "Reservas processadas" },
+  { value: "500.000+", label: "Agendamentos processados" },
   { value: "2 min", label: "Tempo médio de setup" },
 ];
 

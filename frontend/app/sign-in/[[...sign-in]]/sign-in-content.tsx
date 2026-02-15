@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { AuthLayout } from "@/components/auth/auth-layout";
 import Link from "next/link";
 import { Loader2, Mail, Lock, ArrowLeft, Shield, Smartphone } from "lucide-react";
 
@@ -37,8 +38,6 @@ export function SignInContent() {
         password,
       });
 
-      console.log("Sign in result:", JSON.stringify(result, null, 2));
-
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
         router.push("/select-org");
@@ -47,7 +46,6 @@ export function SignInContent() {
 
       if (result.status === "needs_first_factor") {
         const firstFactors = result.supportedFirstFactors || [];
-        console.log("First factors available:", firstFactors);
         
         if (firstFactors.length === 0) {
           setError("Nenhum método de verificação disponível");
@@ -59,11 +57,10 @@ export function SignInContent() {
         const phoneCodeFactor = firstFactors.find(f => f.strategy === "phone_code");
 
         if (emailCodeFactor) {
-          const prepareResult = await signIn.prepareFirstFactor({
+          await signIn.prepareFirstFactor({
             strategy: "email_code",
             emailAddressId: result.identifier as string,
           });
-          console.log("Prepare email code result:", prepareResult);
           setStep("email-code");
           setPendingStrategy("email_code");
         } else if (phoneCodeFactor) {
@@ -78,7 +75,6 @@ export function SignInContent() {
         }
       } else if (result.status === "needs_second_factor") {
         const secondFactors = result.supportedSecondFactors || [];
-        console.log("Second factors available:", secondFactors);
         
         if (secondFactors.length === 0) {
           setError("Configuração de 2FA incompleta. Entre em contato com o suporte.");
@@ -100,7 +96,6 @@ export function SignInContent() {
           setError(`2FA não suportado. Disponíveis: ${secondFactors.map(f => f.strategy).join(", ")}`);
         }
       } else {
-        console.log("Unknown status:", result.status);
         setError(`Estado de autenticação desconhecido: ${result.status}`);
       }
     } catch (err: unknown) {
@@ -125,14 +120,11 @@ export function SignInContent() {
         code,
       });
 
-      console.log("First factor verification result:", JSON.stringify(result, null, 2));
-
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
         router.push("/select-org");
       } else if (result.status === "needs_second_factor") {
         const secondFactors = result.supportedSecondFactors || [];
-        console.log("Second factors after first factor:", secondFactors);
         
         const totpFactor = secondFactors.find(f => f.strategy === "totp");
         const phoneFactor = secondFactors.find(f => f.strategy === "phone_code");
@@ -185,8 +177,6 @@ export function SignInContent() {
         throw new Error("Invalid second factor strategy");
       }
 
-      console.log("Second factor result:", JSON.stringify(result, null, 2));
-
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
         router.push("/select-org");
@@ -228,24 +218,23 @@ export function SignInContent() {
 
   if (step === "sign-in") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">
-        <div className="mb-8 text-center">
-          <Logo variant="full" size="lg" className="mx-auto" />
-          <h1 className="mt-6 text-2xl font-bold text-slate-900 dark:text-white">
-            Bem-vindo de volta
-          </h1>
-          <p className="mt-2 text-slate-600 dark:text-slate-400">
-            Entre na sua conta para continuar
-          </p>
-        </div>
+      <AuthLayout>
+        <div className="space-y-6">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold">
+              Bem-vindo de volta
+            </h1>
+            <p className="mt-2 text-muted-foreground">
+              Entre na sua conta para continuar
+            </p>
+          </div>
 
-        <div className="w-full max-w-md space-y-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-6">
+          <div className="bg-card rounded-2xl border p-6 shadow-sm space-y-6">
             <form onSubmit={handleSignIn} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
                     id="email"
                     type="email"
@@ -267,7 +256,7 @@ export function SignInContent() {
                   </Link>
                 </div>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
                     id="password"
                     type="password"
@@ -282,7 +271,7 @@ export function SignInContent() {
               </div>
 
               {error && (
-                <p className="text-sm text-red-500 text-center">{error}</p>
+                <p className="text-sm text-destructive text-center">{error}</p>
               )}
 
               <Button type="submit" className="w-full h-12" disabled={loading || !isLoaded}>
@@ -302,7 +291,7 @@ export function SignInContent() {
                 <Separator className="w-full" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white dark:bg-slate-900 px-2 text-slate-500">
+                <span className="bg-card px-2 text-muted-foreground">
                   ou continue com
                 </span>
               </div>
@@ -351,7 +340,7 @@ export function SignInContent() {
             </div>
           </div>
 
-          <p className="text-center text-sm text-slate-600 dark:text-slate-400">
+          <p className="text-center text-sm text-muted-foreground">
             Não tem uma conta?{" "}
             <Link href="/sign-up" className="text-primary hover:text-primary/80 font-medium">
               Criar conta
@@ -365,7 +354,7 @@ export function SignInContent() {
             </Button>
           </Link>
         </div>
-      </div>
+      </AuthLayout>
     );
   }
 
@@ -387,21 +376,20 @@ export function SignInContent() {
   const isSecondFactor = step === "totp";
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">
-      <div className="mb-8 text-center">
-        <Logo variant="full" size="lg" className="mx-auto" />
-        <h1 className="mt-6 text-2xl font-bold text-slate-900 dark:text-white">
-          {stepInfo.title}
-        </h1>
-        <p className="mt-2 text-slate-600 dark:text-slate-400">
-          {stepInfo.subtitle}
-        </p>
-      </div>
+    <AuthLayout>
+      <div className="space-y-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">
+            {stepInfo.title}
+          </h1>
+          <p className="mt-2 text-muted-foreground">
+            {stepInfo.subtitle}
+          </p>
+        </div>
 
-      <div className="w-full max-w-md space-y-4">
-        <form 
-          onSubmit={isSecondFactor ? handleVerifySecondFactor : handleVerifyFirstFactor} 
-          className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-4"
+        <form
+          onSubmit={isSecondFactor ? handleVerifySecondFactor : handleVerifyFirstFactor}
+          className="bg-card rounded-2xl border p-6 shadow-sm space-y-4"
         >
           <div className="flex justify-center mb-4">
             <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
@@ -426,7 +414,7 @@ export function SignInContent() {
           </div>
 
           {error && (
-            <p className="text-sm text-red-500 text-center">{error}</p>
+            <p className="text-sm text-destructive text-center">{error}</p>
           )}
 
           <Button type="submit" className="w-full h-12" disabled={loading || !isLoaded || code.length < 6}>
@@ -451,6 +439,6 @@ export function SignInContent() {
           Voltar
         </Button>
       </div>
-    </div>
+    </AuthLayout>
   );
 }

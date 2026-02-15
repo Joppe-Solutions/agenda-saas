@@ -103,8 +103,16 @@ export function BookingCalendar({ merchantId }: BookingCalendarProps) {
         const dateStr = booking.bookingDate;
         const startTime = booking.startTime || "08:00";
         const startParts = startTime.split(":");
-        const endHour = parseInt(startParts[0]) + 2;
-        const endTime = booking.endTime || `${String(endHour).padStart(2, "0")}:${startParts[1]}`;
+        
+        let endTime = booking.endTime;
+        if (!endTime) {
+          const durationMinutes = 60;
+          const startMinutes = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
+          const endMinutes = startMinutes + durationMinutes;
+          const endHour = Math.floor(endMinutes / 60);
+          const endMin = endMinutes % 60;
+          endTime = `${String(endHour).padStart(2, "0")}:${String(endMin).padStart(2, "0")}`;
+        }
 
         const start = new Date(`${dateStr}T${startTime}:00`);
         const end = new Date(`${dateStr}T${endTime}:00`);

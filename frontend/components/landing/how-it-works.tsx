@@ -15,19 +15,19 @@ const steps = [
     step: "02",
     icon: Settings,
     title: "Configure seus serviços",
-    description: "Adicione seus recursos e defina preços e horários.",
+    description: "Adicione serviços, preços, duração e sua equipe.",
   },
   {
     step: "03",
     icon: Share2,
     title: "Compartilhe seu link",
-    description: "Receba uma página personalizada para compartilhar.",
+    description: "Receba uma página personalizada para seus clientes.",
   },
   {
     step: "04",
     icon: Banknote,
-    title: "Receba reservas",
-    description: "Clientes reservam e pagam online automaticamente.",
+    title: "Receba agendamentos",
+    description: "Clientes agendam e pagam online automaticamente.",
   },
 ];
 
@@ -49,7 +49,7 @@ export function HowItWorks() {
             Como funciona
           </h2>
           <p className="mt-4 text-muted-foreground text-lg">
-            Em 4 passos simples você está pronto para receber reservas.
+            Em 4 passos simples você está pronto para receber agendamentos.
           </p>
         </motion.div>
 

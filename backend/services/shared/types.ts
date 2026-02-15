@@ -11,8 +11,8 @@ export const bookingStatuses = [
 ] as const;
 export type BookingStatus = "pending_payment" | "confirmed" | "in_progress" | "completed" | "cancelled" | "no_show";
 
-export const paymentStatuses = ["pending", "approved", "rejected", "refunded"] as const;
-export type PaymentStatus = "pending" | "approved" | "rejected" | "refunded";
+export const paymentStatuses = ["pending", "approved", "rejected", "refunded", "expired"] as const;
+export type PaymentStatus = "pending" | "approved" | "rejected" | "refunded" | "expired";
 
 export const paymentMethods = ["PIX", "CREDIT_CARD", "CASH"] as const;
 export type PaymentMethod = "PIX" | "CREDIT_CARD" | "CASH";

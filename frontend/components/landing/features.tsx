@@ -8,8 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 const features = [
   {
     icon: Calendar,
-    title: "Calendário Inteligente",
-    description: "Visualize todas as suas reservas em um calendário intuitivo.",
+    title: "Agenda Inteligente",
+    description: "Gerencie horários, profissionais e serviços em um só lugar.",
     badge: "Mais usado",
   },
   {
@@ -20,13 +20,13 @@ const features = [
   },
   {
     icon: Users,
-    title: "Gestão de Clientes",
-    description: "Mantenha um histórico completo dos seus clientes.",
+    title: "Gestão de Profissionais",
+    description: "Cadastre sua equipe com horários e serviços específicos.",
   },
   {
     icon: BarChart3,
     title: "Relatórios Detalhados",
-    description: "Acompanhe faturamento e métricas importantes.",
+    description: "Acompanhe faturamento, profissionais e serviços mais procurados.",
   },
   {
     icon: Bell,
@@ -37,12 +37,12 @@ const features = [
   {
     icon: Smartphone,
     title: "100% Responsivo",
-    description: "Acesse de qualquer dispositivo.",
+    description: "Seus clientes agendam de qualquer dispositivo.",
   },
   {
     icon: Globe,
     title: "Página Personalizada",
-    description: "Sua própria página de reservas com sua marca.",
+    description: "Sua própria página de agendamentos com sua marca.",
   },
   {
     icon: Shield,
@@ -52,7 +52,7 @@ const features = [
   {
     icon: Zap,
     title: "Setup Instantâneo",
-    description: "Comece a receber reservas em minutos.",
+    description: "Comece a receber agendamentos em minutos.",
   },
 ];
 
@@ -83,7 +83,7 @@ export function Features() {
                 Tudo que você precisa
               </h2>
               <p className="mt-4 text-slate-400 text-lg">
-                Ferramentas poderosas para transformar a forma como você gerencia reservas.
+                Ferramentas poderosas para transformar a forma como você gerencia agendamentos.
               </p>
             </div>
 

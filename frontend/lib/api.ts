@@ -186,16 +186,18 @@ export async function getBooking(bookingId: string) {
 
 export async function listMerchantBookings(
   merchantId: string, 
-  filters?: { status?: BookingStatus; fromDate?: string; toDate?: string; staffId?: string }
+  filters?: { status?: BookingStatus; fromDate?: string; toDate?: string; staffId?: string; limit?: number; offset?: number }
 ) {
   const params = new URLSearchParams();
   if (filters?.status) params.set("status", filters.status);
   if (filters?.fromDate) params.set("fromDate", filters.fromDate);
   if (filters?.toDate) params.set("toDate", filters.toDate);
   if (filters?.staffId) params.set("staffId", filters.staffId);
+  if (filters?.limit) params.set("limit", String(filters.limit));
+  if (filters?.offset) params.set("offset", String(filters.offset));
   
   const query = params.toString() ? `?${params.toString()}` : "";
-  return request<{ bookings: Booking[] }>(`/merchant/${merchantId}/bookings${query}`);
+  return request<{ bookings: Booking[]; total: number; hasMore: boolean }>(`/merchant/${merchantId}/bookings${query}`);
 }
 
 export async function updateBookingStatus(
@@ -251,10 +253,17 @@ export async function getReportsSummary(merchantId: string, period?: "day" | "we
   }>(`/merchant/${merchantId}/reports/summary${query}`);
 }
 
-export async function getCustomersList(merchantId: string, search?: string) {
-  const query = search ? `?search=${encodeURIComponent(search)}` : "";
+export async function getCustomersList(merchantId: string, search?: string, limit?: number, offset?: number) {
+  const params = new URLSearchParams();
+  if (search) params.set("search", encodeURIComponent(search));
+  if (limit) params.set("limit", String(limit));
+  if (offset) params.set("offset", String(offset));
+  
+  const query = params.toString() ? `?${params.toString()}` : "";
   return request<{
     customers: Customer[];
+    total: number;
+    hasMore: boolean;
   }>(`/merchant/${merchantId}/customers${query}`);
 }
 

@@ -3,7 +3,7 @@ import { CheckCircle2 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 
 const features = [
-  "Gerencie todas as suas reservas em um só lugar",
+  "Gerencie todos os seus agendamentos em um só lugar",
   "Receba pagamentos via PIX instantâneo",
   "Notifique clientes automaticamente",
   "Relatórios e métricas em tempo real",
@@ -23,13 +23,13 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
           <div className="space-y-8">
             <div>
               <h1 className="text-3xl font-bold leading-tight lg:text-4xl">
-                Simplifique suas reservas,
+                Simplifique seus agendamentos,
                 <br />
                 maximize seus resultados.
               </h1>
               <p className="mt-4 text-lg text-white/70">
                 Junte-se a centenas de empresários que já transformaram
-                a forma como gerenciam suas reservas.
+                a forma como gerenciam seus agendamentos.
               </p>
             </div>
 

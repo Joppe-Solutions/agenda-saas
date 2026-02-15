@@ -1670,64 +1670,108 @@ export const checkPaymentStatus = api(
 
 export const paymentWebhook = api(
   { expose: true, method: "POST", path: "/webhooks/payment" },
-  async (body: { type?: string; data?: { id: string } }) => {
-    if (body.type === "payment" && body.data?.id) {
-      const paymentId = body.data.id;
-
-      const payment = await db.queryRow<{
-        id: string;
-        booking_id: string;
-        merchant_id: string;
-        provider: string;
-        provider_payment_id: string;
-      }>`
-        SELECT id, booking_id, merchant_id, provider, provider_payment_id
-        FROM payments
-        WHERE provider_payment_id = ${paymentId}
-      `;
-
-      if (payment) {
-        const merchant = await db.queryRow<{
-          mercado_pago_access_token: string | null;
-        }>`
-          SELECT mercado_pago_access_token FROM merchants WHERE id = ${payment.merchant_id}
-        `;
-
-        const status = await verifyPaymentStatus(
-          paymentId,
-          payment.provider as PaymentProvider,
-          merchant?.mercado_pago_access_token ?? undefined,
-        );
-
-        if (status === "approved") {
-          await db.exec`
-            UPDATE payments
-            SET status = 'approved', paid_at = now()
-            WHERE id = ${payment.id}
-          `;
-
-          await db.exec`
-            UPDATE bookings
-            SET status = 'confirmed', updated_at = now()
-            WHERE id = ${payment.booking_id}
-          `;
-        } else if (status === "rejected" || status === "cancelled") {
-          await db.exec`
-            UPDATE payments
-            SET status = 'rejected'
-            WHERE id = ${payment.id}
-          `;
-
-          await db.exec`
-            UPDATE bookings
-            SET status = 'cancelled', updated_at = now()
-            WHERE id = ${payment.booking_id}
-          `;
-        }
-      }
+  async (body: { type?: string; action?: string; data?: { id: string } }) => {
+    const paymentId = body.data?.id;
+    
+    if (!paymentId) {
+      return { ok: true, processed: false, reason: "no_payment_id" };
     }
 
-    return { ok: true };
+    if (body.type !== "payment" && body.action !== "payment.updated") {
+      return { ok: true, processed: false, reason: "ignored_type" };
+    }
+
+    const payment = await db.queryRow<{
+      id: string;
+      booking_id: string;
+      merchant_id: string;
+      provider: string;
+      provider_payment_id: string;
+      status: string;
+    }>`
+      SELECT id, booking_id, merchant_id, provider, provider_payment_id, status
+      FROM payments
+      WHERE provider_payment_id = ${paymentId}
+    `;
+
+    if (!payment) {
+      return { ok: true, processed: false, reason: "payment_not_found" };
+    }
+
+    if (payment.status === "approved") {
+      return { ok: true, processed: false, reason: "already_approved" };
+    }
+
+    const merchant = await db.queryRow<{
+      mercado_pago_access_token: string | null;
+    }>`
+      SELECT mercado_pago_access_token FROM merchants WHERE id = ${payment.merchant_id}
+    `;
+
+    const status = await verifyPaymentStatus(
+      paymentId,
+      payment.provider as PaymentProvider,
+      merchant?.mercado_pago_access_token ?? undefined,
+    );
+
+    if (status === "approved") {
+      await db.exec`
+        UPDATE payments
+        SET status = 'approved', paid_at = now(), updated_at = now()
+        WHERE id = ${payment.id}
+      `;
+
+      await db.exec`
+        UPDATE bookings
+        SET status = 'confirmed', updated_at = now()
+        WHERE id = ${payment.booking_id} AND status = 'pending_payment'
+      `;
+
+      const booking = await db.queryRow<{
+        customer_id: string | null;
+        total_amount: number | null;
+        merchant_id: string;
+      }>`
+        SELECT customer_id, total_amount, merchant_id FROM bookings WHERE id = ${payment.booking_id}
+      `;
+
+      if (booking?.customer_id && booking.total_amount) {
+        await db.exec`
+          UPDATE customers
+          SET total_spent = COALESCE(total_spent, 0) + ${booking.total_amount},
+              total_bookings = COALESCE(total_bookings, 0) + 1,
+              last_visit = CURRENT_DATE,
+              updated_at = now()
+          WHERE id = ${booking.customer_id}
+        `;
+      }
+
+      return { ok: true, processed: true, action: "approved" };
+    } else if (status === "rejected" || status === "cancelled") {
+      await db.exec`
+        UPDATE payments
+        SET status = 'rejected', updated_at = now()
+        WHERE id = ${payment.id}
+      `;
+
+      await db.exec`
+        UPDATE bookings
+        SET status = 'cancelled', updated_at = now()
+        WHERE id = ${payment.booking_id} AND status = 'pending_payment'
+      `;
+
+      return { ok: true, processed: true, action: "rejected" };
+    } else if (status === "expired") {
+      await db.exec`
+        UPDATE payments
+        SET status = 'expired', updated_at = now()
+        WHERE id = ${payment.id}
+      `;
+
+      return { ok: true, processed: true, action: "expired" };
+    }
+
+    return { ok: true, processed: false, reason: "status_unchanged" };
   },
 );
 
@@ -1867,8 +1911,17 @@ export const getReportsSummary = api(
 
 export const getCustomersList = api(
   { expose: true, method: "GET", path: "/merchant/:merchantId/customers" },
-  async ({ merchantId, search }: { merchantId: string; search?: string }) => {
+  async ({ merchantId, search, limit, offset }: { merchantId: string; search?: string; limit?: number; offset?: number }) => {
     const searchPattern = search ? `%${search}%` : null;
+    const pageSize = Math.min(limit ?? 50, 100);
+    const pageOffset = offset ?? 0;
+
+    const countRow = await db.queryRow<{ total: number }>`
+      SELECT COUNT(*)::int AS total
+      FROM customers c
+      WHERE c.merchant_id = ${merchantId}
+        AND (${searchPattern}::text IS NULL OR c.name ILIKE ${searchPattern} OR c.phone ILIKE ${searchPattern})
+    `;
 
     const rows = await db.queryAll<{
       id: string;
@@ -1888,7 +1941,8 @@ export const getCustomersList = api(
       WHERE c.merchant_id = ${merchantId}
         AND (${searchPattern}::text IS NULL OR c.name ILIKE ${searchPattern} OR c.phone ILIKE ${searchPattern})
       ORDER BY c.created_at DESC
-      LIMIT 100
+      LIMIT ${pageSize}
+      OFFSET ${pageOffset}
     `;
 
     return {
@@ -1902,6 +1956,8 @@ export const getCustomersList = api(
         totalSpent: Number(row.total_spent),
         lastVisit: row.last_visit?.toISOString().split('T')[0],
       })),
+      total: countRow?.total ?? 0,
+      hasMore: (countRow?.total ?? 0) > pageOffset + pageSize,
     };
   },
 );

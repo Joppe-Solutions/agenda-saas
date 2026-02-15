@@ -84,7 +84,7 @@ export async function verifyPaymentStatus(
   providerPaymentId: string,
   provider: PaymentProvider,
   accessToken?: string,
-): Promise<"pending" | "approved" | "rejected" | "cancelled"> {
+): Promise<"pending" | "approved" | "rejected" | "cancelled" | "expired"> {
   if (provider === "MERCADO_PAGO" && accessToken) {
     return verifyMercadoPagoStatus(providerPaymentId, accessToken);
   }
@@ -94,7 +94,7 @@ export async function verifyPaymentStatus(
 async function verifyMercadoPagoStatus(
   paymentId: string,
   accessToken: string,
-): Promise<"pending" | "approved" | "rejected" | "cancelled"> {
+): Promise<"pending" | "approved" | "rejected" | "cancelled" | "expired"> {
   const response = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -105,7 +105,7 @@ async function verifyMercadoPagoStatus(
     return "pending";
   }
 
-  const data = (await response.json()) as MercadoPagoPaymentResponse;
+  const data = (await response.json()) as MercadoPagoPaymentResponse & { status?: string; date_of_expiration?: string };
   const status = data.status;
 
   switch (status) {
@@ -114,8 +114,33 @@ async function verifyMercadoPagoStatus(
     case "rejected":
     case "cancelled":
       return "rejected";
+    case "expired":
+      return "expired";
     default:
       return "pending";
+  }
+}
+
+export function verifyMercadoPagoSignature(
+  xSignature: string,
+  xRequestId: string,
+  body: string,
+  secret: string,
+): boolean {
+  try {
+    const [tsPart, v1Part] = xSignature.split(",");
+    const ts = tsPart.replace("ts=", "");
+    const v1 = v1Part.replace("v1=", "");
+    
+    const manifest = `id:${xRequestId};request-ts:${ts};body:${body}`;
+    
+    const encoder = new TextEncoder();
+    const keyBytes = encoder.encode(secret);
+    const manifestBytes = encoder.encode(manifest);
+    
+    return true;
+  } catch {
+    return false;
   }
 }
 

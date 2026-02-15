@@ -17,6 +17,7 @@ const statusColors: Record<Payment["status"], string> = {
   approved: "bg-green-100 text-green-800",
   rejected: "bg-red-100 text-red-800",
   refunded: "bg-gray-100 text-gray-800",
+  expired: "bg-orange-100 text-orange-800",
 };
 
 const statusLabels: Record<Payment["status"], string> = {
@@ -24,6 +25,7 @@ const statusLabels: Record<Payment["status"], string> = {
   approved: "Aprovado",
   rejected: "Rejeitado",
   refunded: "Estornado",
+  expired: "Expirado",
 };
 
 export function PaymentsPage({ merchantId }: PaymentsPageProps) {

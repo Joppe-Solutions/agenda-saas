@@ -24,6 +24,8 @@ interface MerchantBookingsParams {
   fromDate?: string;
   toDate?: string;
   staffId?: string;
+  limit?: number;
+  offset?: number;
 }
 
 async function checkTimeConflict(
@@ -137,9 +139,11 @@ export const createBooking = api(
       require_deposit: boolean;
       mercado_pago_access_token: string | null;
       allow_online_payment: boolean;
+      enable_loyalty: boolean;
+      points_per_real: number;
     }>`
       SELECT deposit_percentage, deposit_deadline_minutes, require_deposit, 
-             mercado_pago_access_token, allow_online_payment
+             mercado_pago_access_token, allow_online_payment, enable_loyalty, points_per_real
       FROM merchants WHERE id = ${parsed.data.merchantId}
     `;
 
@@ -148,15 +152,21 @@ export const createBooking = api(
     }
 
     const [startH, startM] = parsed.data.startTime.split(":").map(Number);
+    const totalDuration = service.duration_minutes + service.buffer_before_minutes + service.buffer_after_minutes;
     const endMinutes = startH * 60 + startM + service.duration_minutes;
     const endTime = `${String(Math.floor(endMinutes / 60)).padStart(2, "0")}:${String(endMinutes % 60).padStart(2, "0")}`;
+
+    const bufferStartMinutes = startH * 60 + startM - service.buffer_before_minutes;
+    const bufferEndMinutes = endMinutes + service.buffer_after_minutes;
+    const bufferStartTime = `${String(Math.floor(bufferStartMinutes / 60)).padStart(2, "0")}:${String(Math.abs(bufferStartMinutes) % 60).padStart(2, "0")}`;
+    const bufferEndTime = `${String(Math.floor(bufferEndMinutes / 60)).padStart(2, "0")}:${String(bufferEndMinutes % 60).padStart(2, "0")}`;
 
     const hasConflict = await checkTimeConflict(
       parsed.data.serviceId, 
       parsed.data.staffId, 
       parsed.data.bookingDate, 
-      parsed.data.startTime, 
-      endTime
+      bufferStartTime,
+      bufferEndTime
     );
     if (hasConflict) {
       throw APIError.alreadyExists("Horário já reservado");
@@ -165,8 +175,8 @@ export const createBooking = api(
     const hasBlock = await checkStaffBlock(
       parsed.data.staffId, 
       parsed.data.bookingDate, 
-      parsed.data.startTime, 
-      endTime
+      bufferStartTime,
+      bufferEndTime
     );
     if (hasBlock) {
       throw APIError.alreadyExists("Profissional indisponível neste horário");
@@ -193,6 +203,11 @@ export const createBooking = api(
 
     const depositExpiresAt = new Date(now.getTime() + merchant.deposit_deadline_minutes * 60 * 1000);
 
+    let loyaltyPointsEarned = 0;
+    if (merchant.enable_loyalty && merchant.points_per_real > 0 && totalAmount > 0) {
+      loyaltyPointsEarned = Math.floor(totalAmount * merchant.points_per_real);
+    }
+
     let customerId: string | null = null;
     const existingCustomer = await db.queryRow<{ id: string }>`
       SELECT id FROM customers 
@@ -215,13 +230,13 @@ export const createBooking = api(
       INSERT INTO bookings (
         id, service_id, staff_id, merchant_id, customer_id, customer_name, customer_phone, customer_email,
         booking_date, start_time, end_time, status, deposit_amount, total_amount,
-        notes, deposit_expires_at
+        notes, deposit_expires_at, loyalty_points_earned
       ) VALUES (
         ${bookingId}, ${parsed.data.serviceId}, ${parsed.data.staffId ?? null}, ${parsed.data.merchantId}, ${customerId}, 
         ${parsed.data.customerName}, ${parsed.data.customerPhone}, ${parsed.data.customerEmail ?? null},
         ${parsed.data.bookingDate}::date, ${parsed.data.startTime}, ${endTime}, 
         ${initialStatus}, ${depositAmount}, ${totalAmount},
-        ${parsed.data.notes ?? null}, ${depositExpiresAt.toISOString()}
+        ${parsed.data.notes ?? null}, ${depositExpiresAt.toISOString()}, ${loyaltyPointsEarned}
       )
     `;
 
@@ -359,7 +374,20 @@ export const getBooking = api(
 
 export const listMerchantBookings = api(
   { expose: true, method: "GET", path: "/merchant/:merchantId/bookings" },
-  async ({ merchantId, status, fromDate, toDate, staffId }: MerchantBookingsParams) => {
+  async ({ merchantId, status, fromDate, toDate, staffId, limit, offset }: MerchantBookingsParams) => {
+    const pageSize = Math.min(limit ?? 50, 100);
+    const pageOffset = offset ?? 0;
+
+    const countRow = await db.queryRow<{ total: number }>`
+      SELECT COUNT(*)::int AS total
+      FROM bookings b
+      WHERE b.merchant_id = ${merchantId}
+        AND (${status}::text IS NULL OR b.status = ${status})
+        AND (${fromDate}::text IS NULL OR b.booking_date >= ${fromDate}::date)
+        AND (${toDate}::text IS NULL OR b.booking_date <= ${toDate}::date)
+        AND (${staffId}::uuid IS NULL OR b.staff_id = ${staffId})
+    `;
+
     const rows = await db.queryAll<{
       id: string;
       service_id: string;
@@ -398,7 +426,8 @@ export const listMerchantBookings = api(
         AND (${toDate}::text IS NULL OR b.booking_date <= ${toDate}::date)
         AND (${staffId}::uuid IS NULL OR b.staff_id = ${staffId})
       ORDER BY b.booking_date DESC, b.start_time ASC, b.created_at DESC
-      LIMIT 200
+      LIMIT ${pageSize}
+      OFFSET ${pageOffset}
     `;
 
     return {
@@ -428,6 +457,8 @@ export const listMerchantBookings = api(
         staffName: row.staff_name ?? undefined,
         loyaltyPointsEarned: 0,
       })),
+      total: countRow?.total ?? 0,
+      hasMore: (countRow?.total ?? 0) > pageOffset + pageSize,
     };
   },
 );

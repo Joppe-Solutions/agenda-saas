@@ -3,11 +3,11 @@
 import { useSignUp } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Logo } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { AuthLayout } from "@/components/auth/auth-layout";
 import Link from "next/link";
 import { Loader2, Mail, Lock, User, ArrowLeft } from "lucide-react";
 
@@ -45,7 +45,6 @@ export function SignUpContent() {
         router.push("/select-org");
       }
     } catch (err: unknown) {
-      console.error("Sign up error:", err);
       const error = err as { errors?: Array<{ message: string }> };
       setError(error.errors?.[0]?.message || "Erro ao criar conta. Tente novamente.");
     } finally {
@@ -68,7 +67,6 @@ export function SignUpContent() {
         router.push("/select-org");
       }
     } catch (err: unknown) {
-      console.error("Verification error:", err);
       const error = err as { errors?: Array<{ message: string }> };
       setError(error.errors?.[0]?.message || "Código inválido. Tente novamente.");
     } finally {
@@ -87,7 +85,6 @@ export function SignUpContent() {
         redirectUrlComplete: "/select-org",
       });
     } catch (err: unknown) {
-      console.error("OAuth error:", err);
       setError("Erro ao conectar com provedor");
       setLoading(false);
     }
@@ -95,19 +92,18 @@ export function SignUpContent() {
 
   if (verifying) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">
-        <div className="mb-8 text-center">
-          <Logo variant="full" size="lg" className="mx-auto" />
-          <h1 className="mt-6 text-2xl font-bold text-slate-900 dark:text-white">
-            Verifique seu email
-          </h1>
-          <p className="mt-2 text-slate-600 dark:text-slate-400">
-            Enviamos um código para {email}
-          </p>
-        </div>
+      <AuthLayout>
+        <div className="space-y-6">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold">
+              Verifique seu email
+            </h1>
+            <p className="mt-2 text-muted-foreground">
+              Enviamos um código para {email}
+            </p>
+          </div>
 
-        <div className="w-full max-w-md">
-          <form onSubmit={handleVerifyCode} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-4">
+          <form onSubmit={handleVerifyCode} className="bg-card rounded-2xl border p-6 shadow-sm space-y-4">
             <div className="space-y-2">
               <Label htmlFor="code">Código de verificação</Label>
               <Input
@@ -115,7 +111,7 @@ export function SignUpContent() {
                 type="text"
                 placeholder="000000"
                 value={code}
-                onChange={(e) => setCode(e.target.value)}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                 className="h-12 text-center text-lg tracking-widest"
                 maxLength={6}
                 required
@@ -125,7 +121,7 @@ export function SignUpContent() {
             </div>
 
             {error && (
-              <p className="text-sm text-red-500 text-center">{error}</p>
+              <p className="text-sm text-destructive text-center">{error}</p>
             )}
 
             <Button type="submit" className="w-full h-12" disabled={loading || !isLoaded}>
@@ -139,30 +135,39 @@ export function SignUpContent() {
               )}
             </Button>
           </form>
+
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full"
+            onClick={() => setVerifying(false)}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Voltar
+          </Button>
         </div>
-      </div>
+      </AuthLayout>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">
-      <div className="mb-8 text-center">
-        <Logo variant="full" size="lg" className="mx-auto" />
-        <h1 className="mt-6 text-2xl font-bold text-slate-900 dark:text-white">
-          Criar conta
-        </h1>
-        <p className="mt-2 text-slate-600 dark:text-slate-400">
-          Comece a gerenciar suas reservas hoje
-        </p>
-      </div>
+    <AuthLayout>
+      <div className="space-y-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">
+            Criar conta
+          </h1>
+          <p className="mt-2 text-muted-foreground">
+            Comece a gerenciar seus agendamentos hoje
+          </p>
+        </div>
 
-      <div className="w-full max-w-md space-y-4">
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-6">
+        <div className="bg-card rounded-2xl border p-6 shadow-sm space-y-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Nome</Label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   id="name"
                   type="text"
@@ -179,7 +184,7 @@ export function SignUpContent() {
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   id="email"
                   type="email"
@@ -196,7 +201,7 @@ export function SignUpContent() {
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   id="password"
                   type="password"
@@ -209,11 +214,11 @@ export function SignUpContent() {
                   minLength={8}
                 />
               </div>
-              <p className="text-xs text-slate-500">Mínimo de 8 caracteres</p>
+              <p className="text-xs text-muted-foreground">Mínimo de 8 caracteres</p>
             </div>
 
             {error && (
-              <p className="text-sm text-red-500 text-center">{error}</p>
+              <p className="text-sm text-destructive text-center">{error}</p>
             )}
 
             <Button type="submit" className="w-full h-12" disabled={loading || !isLoaded}>
@@ -233,7 +238,7 @@ export function SignUpContent() {
               <Separator className="w-full" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white dark:bg-slate-900 px-2 text-slate-500">
+              <span className="bg-card px-2 text-muted-foreground">
                 ou continue com
               </span>
             </div>
@@ -282,7 +287,7 @@ export function SignUpContent() {
           </div>
         </div>
 
-        <p className="text-center text-sm text-slate-600 dark:text-slate-400">
+        <p className="text-center text-sm text-muted-foreground">
           Já tem uma conta?{" "}
           <Link href="/sign-in" className="text-primary hover:text-primary/80 font-medium">
             Entrar
@@ -296,6 +301,6 @@ export function SignUpContent() {
           </Button>
         </Link>
       </div>
-    </div>
+    </AuthLayout>
   );
 }

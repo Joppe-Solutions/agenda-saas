@@ -21,8 +21,8 @@ export function RecentBookings({ bookings }: RecentBookingsProps) {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Reservas Recentes</CardTitle>
-          <CardDescription>Últimas 5 reservas do seu negócio</CardDescription>
+          <CardTitle>Agendamentos Recentes</CardTitle>
+          <CardDescription>Últimos 5 agendamentos do seu negócio</CardDescription>
         </div>
         <Button variant="ghost" size="sm" asChild>
           <Link href="/dashboard/bookings">
@@ -34,7 +34,7 @@ export function RecentBookings({ bookings }: RecentBookingsProps) {
       <CardContent>
         {recentBookings.length === 0 ? (
           <div className="flex h-32 items-center justify-center text-muted-foreground">
-            <p>Nenhuma reserva encontrada</p>
+            <p>Nenhum agendamento encontrado</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -52,10 +52,10 @@ export function RecentBookings({ bookings }: RecentBookingsProps) {
                   <div>
                     <p className="font-medium">{booking.customerName}</p>
                     <p className="text-sm text-muted-foreground">
+                      {booking.serviceName || "Serviço"}
+                      {" • "}
                       {new Date(booking.bookingDate + "T12:00:00").toLocaleDateString("pt-BR")}
                       {booking.startTime && ` • ${booking.startTime}`}
-                      {" • "}
-                      {booking.peopleCount} {booking.peopleCount === 1 ? "pessoa" : "pessoas"}
                     </p>
                   </div>
                 </div>

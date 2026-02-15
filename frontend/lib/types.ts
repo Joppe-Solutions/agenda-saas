@@ -8,7 +8,7 @@ export type BusinessCategory =
 
 export type BookingStatus = "pending_payment" | "confirmed" | "in_progress" | "completed" | "cancelled" | "no_show";
 
-export type PaymentStatus = "pending" | "approved" | "rejected" | "refunded";
+export type PaymentStatus = "pending" | "approved" | "rejected" | "refunded" | "expired";
 export type PaymentMethod = "PIX" | "CREDIT_CARD" | "CASH";
 export type PaymentProvider = "MERCADO_PAGO" | "STUB";
 

@@ -9,7 +9,7 @@ import { ArrowRight, CalendarCheck, CreditCard, Headphones } from "lucide-react"
 import Image from "next/image";
 
 const socialProof = [
-  { icon: CalendarCheck, text: "20+ reservas hoje" },
+  { icon: CalendarCheck, text: "50+ agendamentos hoje" },
   { icon: CreditCard, text: "PIX confirmado" },
   { icon: Headphones, text: "Suporte online" },
 ];
@@ -52,9 +52,9 @@ export function Hero() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl text-white"
           >
-            Reservas online
+            Agendamentos online
             <span className="block bg-gradient-to-r from-primary to-cyan-400 bg-clip-text text-transparent">
-              simples e profissionais
+              para seu negócio
             </span>
           </motion.h1>
 
@@ -64,8 +64,8 @@ export function Hero() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="mt-6 max-w-2xl text-lg text-slate-300 sm:text-xl"
           >
-            Transforme seu negócio com um sistema de reservas completo. 
-            Gerencie agendamentos e receba pagamentos via PIX.
+            Salões, clínicas, consultórios e mais. Gerencie sua agenda, profissionais 
+            e receba pagamentos via PIX em um só lugar.
           </motion.p>
 
           <motion.div
