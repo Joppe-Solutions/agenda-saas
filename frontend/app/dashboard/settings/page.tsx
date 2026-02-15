@@ -8,9 +8,5 @@ export default async function SettingsPageWrapper() {
     redirect("/sign-in?redirect_url=/dashboard/settings");
   }
 
-  if (!orgId) {
-    redirect("/select-org");
-  }
-
-  return <SettingsPage merchantId={orgId} />;
+  return <SettingsPage merchantId={orgId ?? userId} />;
 }

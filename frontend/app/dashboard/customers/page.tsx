@@ -8,9 +8,5 @@ export default async function CustomersPageWrapper() {
     redirect("/sign-in?redirect_url=/dashboard/customers");
   }
 
-  if (!orgId) {
-    redirect("/select-org");
-  }
-
-  return <CustomersPage merchantId={orgId} />;
+  return <CustomersPage merchantId={orgId ?? userId} />;
 }

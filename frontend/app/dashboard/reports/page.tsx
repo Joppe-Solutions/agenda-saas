@@ -8,9 +8,5 @@ export default async function ReportsPageWrapper() {
     redirect("/sign-in?redirect_url=/dashboard/reports");
   }
 
-  if (!orgId) {
-    redirect("/select-org");
-  }
-
-  return <ReportsPage merchantId={orgId} />;
+  return <ReportsPage merchantId={orgId ?? userId} />;
 }

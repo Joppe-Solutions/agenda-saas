@@ -16,11 +16,7 @@ export default async function DashboardPage() {
     redirect("/sign-in?redirect_url=/dashboard");
   }
 
-  if (!orgId) {
-    redirect("/select-org");
-  }
-
-  const merchantId = orgId;
+  const merchantId = orgId ?? userId;
 
   let summary = { bookingsToday: 0, pendingToday: 0, monthRevenue: 0, pendingBookings: 0, totalResources: 0, activeResources: 0 };
   let todaysBookings: Booking[] = [];

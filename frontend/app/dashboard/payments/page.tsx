@@ -8,9 +8,5 @@ export default async function PaymentsPageWrapper() {
     redirect("/sign-in?redirect_url=/dashboard/payments");
   }
 
-  if (!orgId) {
-    redirect("/select-org");
-  }
-
-  return <PaymentsPage merchantId={orgId} />;
+  return <PaymentsPage merchantId={orgId ?? userId} />;
 }

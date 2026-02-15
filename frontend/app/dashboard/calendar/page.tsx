@@ -8,10 +8,6 @@ export default async function CalendarPage() {
     redirect("/sign-in?redirect_url=/dashboard/calendar");
   }
 
-  if (!orgId) {
-    redirect("/select-org");
-  }
-
   return (
     <div className="space-y-6">
       <div>
@@ -20,7 +16,7 @@ export default async function CalendarPage() {
           Visualize e gerencie suas reservas em formato de calendário
         </p>
       </div>
-      <BookingCalendar merchantId={orgId} />
+      <BookingCalendar merchantId={orgId ?? userId} />
     </div>
   );
 }

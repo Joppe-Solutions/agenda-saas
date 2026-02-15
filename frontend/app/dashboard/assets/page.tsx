@@ -8,9 +8,5 @@ export default async function AssetsPageWrapper() {
     redirect("/sign-in?redirect_url=/dashboard/assets");
   }
 
-  if (!orgId) {
-    redirect("/select-org");
-  }
-
-  return <ResourcesPage merchantId={orgId} />;
+  return <ResourcesPage merchantId={orgId ?? userId} />;
 }

@@ -13,11 +13,7 @@ export default async function DashboardBookingsPage() {
     redirect("/sign-in?redirect_url=/dashboard/bookings");
   }
 
-  if (!orgId) {
-    redirect("/select-org");
-  }
-
-  const merchantId = orgId;
+  const merchantId = orgId ?? userId;
 
   let bookings: Awaited<ReturnType<typeof listMerchantBookings>>["bookings"] = [];
   let hasError = false;

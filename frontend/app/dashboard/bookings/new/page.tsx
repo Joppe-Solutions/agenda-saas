@@ -8,9 +8,5 @@ export default async function NewBookingPageWrapper() {
     redirect("/sign-in?redirect_url=/dashboard/bookings/new");
   }
 
-  if (!orgId) {
-    redirect("/select-org");
-  }
-
-  return <NewBookingPage merchantId={orgId} />;
+  return <NewBookingPage merchantId={orgId ?? userId} />;
 }
