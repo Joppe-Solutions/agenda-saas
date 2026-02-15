@@ -1,34 +1,52 @@
 "use client";
 
-import { useOrganizationList, useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { useOrganizationList, useUser, useAuth } from "@clerk/nextjs";
 import { Building2, Plus, Loader2, ArrowRight } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export function SelectOrgContent() {
   const { isLoaded, userMemberships, setActive } = useOrganizationList({
     userMemberships: { infinite: true },
   });
   const { user } = useUser();
-  const router = useRouter();
+  const { orgId, isSignedIn } = useAuth();
   const [selecting, setSelecting] = useState<string | null>(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    console.log("Auth state:", { orgId, isSignedIn, isLoaded });
+    if (orgId && !selecting) {
+      console.log("Redirecting to dashboard, orgId:", orgId);
+      window.location.href = "/dashboard";
+    }
+  }, [orgId, selecting, isSignedIn, isLoaded]);
 
   const handleSelectOrg = async (organizationId: string) => {
-    if (!setActive) return;
+    if (!setActive) {
+      console.error("setActive is not available");
+      setError("Funcionalidade não disponível. Tente recarregar a página.");
+      return;
+    }
+    
+    console.log("Selecting organization:", organizationId);
     setSelecting(organizationId);
+    setError("");
+
     try {
-      await setActive({ organization: organizationId });
-      window.location.href = "/dashboard";
-    } catch (error) {
-      console.error("Error selecting organization:", error);
+      const result = await setActive({ organization: organizationId });
+      console.log("setActive result:", result);
+    } catch (err: unknown) {
+      console.error("Error selecting organization:", err);
+      const error = err as { errors?: Array<{ message: string }> };
+      setError(error.errors?.[0]?.message || "Erro ao selecionar organização");
       setSelecting(null);
     }
   };
 
   const handleCreateOrg = () => {
-    router.push("/create-org");
+    window.location.href = "/create-org";
   };
 
   if (!isLoaded) {
@@ -55,6 +73,12 @@ export function SelectOrgContent() {
       </div>
 
       <div className="w-full max-w-md space-y-4">
+        {error && (
+          <p className="text-sm text-red-500 text-center bg-red-50 dark:bg-red-900/20 rounded-xl p-3">
+            {error}
+          </p>
+        )}
+
         {organizations.length > 0 ? (
           <div className="space-y-2">
             {organizations.map((membership) => (

@@ -81,11 +81,11 @@ export interface Block {
   startTime: string;
   endTime: string;
   reason: BlockReason;
-  notes?: string;
-  recurring?: {
+  notes: string;
+  recurring: {
     frequency: "daily" | "weekly" | "monthly";
-    until?: string;
-  };
+    until: string;
+  } | null;
 }
 
 export interface Customer {

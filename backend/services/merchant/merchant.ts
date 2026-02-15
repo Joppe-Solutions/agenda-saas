@@ -927,8 +927,8 @@ export const listBlocks = api(
         startTime: row.start_time.toISOString(),
         endTime: row.end_time.toISOString(),
         reason: row.reason,
-        notes: row.notes ?? undefined,
-        recurring: row.recurring ?? undefined,
+        notes: row.notes ?? "",
+        recurring: row.recurring ?? null,
       })),
     };
   },
@@ -944,6 +944,10 @@ export const createBlock = api(
 
     const blockId = randomUUID();
 
+    const recurringValue = parsed.data.recurring 
+      ? JSON.stringify(parsed.data.recurring) 
+      : null;
+
     await db.exec`
       INSERT INTO blocks (id, resource_id, start_time, end_time, reason, notes, recurring)
       VALUES (
@@ -952,8 +956,8 @@ export const createBlock = api(
         ${parsed.data.startTime},
         ${parsed.data.endTime},
         ${parsed.data.reason},
-        ${parsed.data.notes ?? null},
-        ${JSON.stringify(parsed.data.recurring) ?? null}
+        ${parsed.data.notes ?? ""},
+        ${recurringValue}
       )
     `;
 
@@ -964,8 +968,13 @@ return {
         startTime: parsed.data.startTime,
         endTime: parsed.data.endTime,
         reason: parsed.data.reason,
-        notes: parsed.data.notes,
-        recurring: parsed.data.recurring,
+        notes: parsed.data.notes ?? "",
+        recurring: parsed.data.recurring 
+          ? {
+              frequency: parsed.data.recurring.frequency,
+              until: parsed.data.recurring.until ?? "",
+            }
+          : null,
       },
     };
   },
