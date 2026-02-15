@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { UserButton, OrganizationSwitcher } from "@clerk/nextjs";
 import { Bell, Menu, Search, Plus } from "lucide-react";
-import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,13 +14,9 @@ import {
 } from "@/components/ui/sheet";
 import { MobileNav } from "./mobile-nav";
 import { Logo } from "@/components/ui/logo";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { userButtonTheme, userButtonThemeDark } from "@/lib/clerk-theme";
+import { userButtonTheme } from "@/lib/clerk-theme";
 
 export function DashboardHeader() {
-  const { resolvedTheme } = useTheme();
-  const theme = resolvedTheme === "dark" ? userButtonThemeDark : userButtonTheme;
-
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-card px-4 lg:px-6">
       <Sheet>
@@ -44,16 +39,20 @@ export function DashboardHeader() {
       <div className="hidden lg:flex items-center gap-3">
         <OrganizationSwitcher
           afterCreateOrganizationUrl="/dashboard"
-          afterLeaveOrganizationUrl="/select-org"
+          afterLeaveOrganizationUrl="/dashboard"
           afterSelectOrganizationUrl="/dashboard"
           appearance={{
             elements: {
-              rootBox: "flex items-center justify-center",
-              organizationSwitcherTrigger: "px-3 py-2 rounded-lg border bg-background hover:bg-accent flex items-center gap-2 text-sm font-medium",
-              organizationSwitcherPopoverCard: "rounded-xl border shadow-lg",
-              organizationPreviewMainIdentifier: "font-semibold",
+              rootBox: "flex items-center",
+              organizationSwitcherTrigger: "px-3 py-2 rounded-lg border bg-background hover:bg-muted flex items-center gap-2 text-sm font-medium transition-colors",
+              organizationSwitcherPopoverCard: "rounded-xl border shadow-lg bg-card",
+              organizationPreviewMainIdentifier: "font-semibold text-foreground",
               organizationPreviewAvatarContainer: "h-6 w-6",
               organizationPreviewAvatar: "h-6 w-6",
+              organizationSwitcherPopoverActionButton: "rounded-lg hover:bg-muted text-sm",
+              organizationSwitcherPopoverActionButtonIcon: "text-muted-foreground",
+              organizationList: "p-2",
+              organizationListItem: "rounded-lg hover:bg-muted",
             },
           }}
         />
@@ -78,8 +77,6 @@ export function DashboardHeader() {
           </Link>
         </Button>
 
-        <ThemeToggle />
-
         <Button variant="ghost" size="icon" className="relative h-11 w-11 rounded-xl">
           <Bell className="h-5 w-5" />
           <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-semibold text-destructive-foreground">
@@ -90,8 +87,8 @@ export function DashboardHeader() {
 
         <UserButton
           appearance={{
-            elements: theme.elements,
-            variables: theme.variables,
+            elements: userButtonTheme.elements,
+            variables: userButtonTheme.variables,
           }}
         />
       </div>

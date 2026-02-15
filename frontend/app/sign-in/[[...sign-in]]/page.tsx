@@ -1,5 +1,4 @@
 import { SignIn } from "@clerk/nextjs";
-import Image from "next/image";
 import { AuthLayout } from "@/components/auth";
 import { clerkTheme } from "@/lib/clerk-theme";
 
@@ -14,7 +13,6 @@ export default function SignInPage() {
             logoImageUrl: "/brand/logo-icon.png",
           },
         }}
-        forceRedirectUrl="/dashboard" 
       />
     </AuthLayout>
   );

@@ -13,7 +13,6 @@ export default function SignUpPage() {
             logoImageUrl: "/brand/logo-icon.png",
           },
         }}
-        forceRedirectUrl="/dashboard" 
       />
     </AuthLayout>
   );
