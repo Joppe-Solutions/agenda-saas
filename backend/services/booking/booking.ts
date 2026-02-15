@@ -46,6 +46,7 @@ async function checkTimeConflict(
         AND id != ${excludeBookingId ?? null}
         AND start_time < ${endTime}
         AND end_time > ${startTime}
+      FOR UPDATE OF bookings
     `;
     return (conflict?.total ?? 0) > 0;
   }
@@ -65,9 +66,26 @@ async function checkTimeConflict(
       AND id != ${excludeBookingId ?? null}
       AND start_time < ${endTime}
       AND end_time > ${startTime}
+    FOR UPDATE OF bookings
   `;
 
   return (overlapCount?.count ?? 0) >= maxConcurrent;
+}
+
+async function acquireBookingLock(
+  staffId: string | undefined,
+  serviceId: string,
+  bookingDate: string
+): Promise<void> {
+  const lockKey = staffId 
+    ? `${staffId}:${bookingDate}`
+    : `${serviceId}:${bookingDate}`;
+  
+  const lockHash = lockKey.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  
+  await db.queryRow<{ locked: boolean }>`
+    SELECT pg_advisory_xact_lock(${lockHash}) AS locked
+  `;
 }
 
 async function checkStaffBlock(
@@ -150,6 +168,8 @@ export const createBooking = api(
     if (!merchant) {
       throw APIError.notFound("Merchant not found");
     }
+
+    await acquireBookingLock(parsed.data.staffId, parsed.data.serviceId, parsed.data.bookingDate);
 
     const [startH, startM] = parsed.data.startTime.split(":").map(Number);
     const totalDuration = service.duration_minutes + service.buffer_before_minutes + service.buffer_after_minutes;
@@ -893,6 +913,64 @@ export const getBookingReceipt = api(
         status: payment.status,
         paidAt: payment.paid_at?.toISOString(),
       } : undefined,
+    };
+  },
+);
+
+export const cancelBookingByCustomer = api(
+  { expose: true, method: "POST", path: "/booking/:bookingId/cancel-by-customer" },
+  async ({ bookingId, customerPhone }: { bookingId: string; customerPhone: string }) => {
+    const booking = await db.queryRow<{
+      id: string;
+      merchant_id: string;
+      status: Booking["status"];
+      customer_phone: string;
+      booking_date: Date;
+      start_time: string;
+      deposit_amount: number;
+    }>`
+      SELECT id, merchant_id, status, customer_phone, booking_date, start_time, deposit_amount
+      FROM bookings
+      WHERE id = ${bookingId}
+    `;
+
+    if (!booking) {
+      throw APIError.notFound("Booking not found");
+    }
+
+    if (booking.customer_phone.replace(/\D/g, "") !== customerPhone.replace(/\D/g, "")) {
+      throw APIError.permissionDenied("Phone number does not match");
+    }
+
+    if (booking.status === "cancelled" || booking.status === "completed" || booking.status === "no_show") {
+      throw APIError.invalidArgument("Cannot cancel this booking");
+    }
+
+    const merchant = await db.queryRow<{
+      cancellation_deadline_hours: number;
+      cancellation_refund_percentage: number;
+    }>`
+      SELECT cancellation_deadline_hours, cancellation_refund_percentage
+      FROM merchants WHERE id = ${booking.merchant_id}
+    `;
+
+    const bookingDateTime = new Date(`${booking.booking_date.toISOString().split('T')[0]}T${booking.start_time}:00`);
+    const hoursUntilBooking = (bookingDateTime.getTime() - Date.now()) / (1000 * 60 * 60);
+
+    if (hoursUntilBooking < (merchant?.cancellation_deadline_hours ?? 24)) {
+      throw APIError.invalidArgument(`Cancellation deadline passed. Minimum ${(merchant?.cancellation_deadline_hours ?? 24)} hours before appointment.`);
+    }
+
+    await db.exec`
+      UPDATE bookings
+      SET status = 'cancelled', updated_at = now()
+      WHERE id = ${bookingId}
+    `;
+
+    return {
+      ok: true,
+      refundPercentage: merchant?.cancellation_refund_percentage ?? 0,
+      refundAmount: Number(booking.deposit_amount) * (merchant?.cancellation_refund_percentage ?? 0) / 100,
     };
   },
 );

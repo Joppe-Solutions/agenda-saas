@@ -1,10 +1,11 @@
 "use client";
 
 import { useOrganizationList, useUser, useAuth } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import { Building2, Plus, Loader2, ArrowRight } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export function SelectOrgContent() {
   const { isLoaded, userMemberships, setActive } = useOrganizationList({
@@ -12,31 +13,31 @@ export function SelectOrgContent() {
   });
   const { user } = useUser();
   const { orgId, isSignedIn } = useAuth();
+  const router = useRouter();
   const [selecting, setSelecting] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
-    console.log("Auth state:", { orgId, isSignedIn, isLoaded });
-    if (orgId && !selecting) {
-      console.log("Redirecting to dashboard, orgId:", orgId);
-      window.location.href = "/dashboard";
+    if (isLoaded && orgId && !selecting && !hasRedirected.current) {
+      hasRedirected.current = true;
+      router.push("/dashboard");
     }
-  }, [orgId, selecting, isSignedIn, isLoaded]);
+  }, [orgId, selecting, isLoaded, router]);
 
   const handleSelectOrg = async (organizationId: string) => {
     if (!setActive) {
-      console.error("setActive is not available");
       setError("Funcionalidade não disponível. Tente recarregar a página.");
       return;
     }
     
-    console.log("Selecting organization:", organizationId);
     setSelecting(organizationId);
     setError("");
 
     try {
-      const result = await setActive({ organization: organizationId });
-      console.log("setActive result:", result);
+      await setActive({ organization: organizationId });
+      hasRedirected.current = true;
+      router.push("/dashboard");
     } catch (err: unknown) {
       console.error("Error selecting organization:", err);
       const error = err as { errors?: Array<{ message: string }> };
@@ -46,7 +47,7 @@ export function SelectOrgContent() {
   };
 
   const handleCreateOrg = () => {
-    window.location.href = "/create-org";
+    router.push("/create-org");
   };
 
   if (!isLoaded) {

@@ -304,6 +304,17 @@ export async function retryBookingPayment(bookingId: string) {
   });
 }
 
+export async function cancelBookingByCustomer(bookingId: string, customerPhone: string) {
+  return request<{
+    ok: boolean;
+    refundPercentage: number;
+    refundAmount: number;
+  }>(`/booking/${bookingId}/cancel-by-customer`, {
+    method: "POST",
+    body: JSON.stringify({ customerPhone }),
+  });
+}
+
 export async function getBookingReceipt(bookingId: string) {
   return request<{
     booking: {
