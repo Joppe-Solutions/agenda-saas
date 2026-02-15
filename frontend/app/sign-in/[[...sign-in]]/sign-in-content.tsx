@@ -9,15 +9,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
-import { Loader2, Mail, Lock, ArrowLeft } from "lucide-react";
+import { Loader2, Mail, Lock, ArrowLeft, Shield } from "lucide-react";
+
+type Step = "sign-in" | "email-code" | "phone-code" | "totp";
 
 export function SignInContent() {
   const { signIn, isLoaded, setActive } = useSignIn();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState<Step>("sign-in");
+  const [pendingVerification, setPendingVerification] = useState<{
+    strategy: string;
+    firstFactor: string;
+    secondFactor?: string;
+  } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,17 +41,126 @@ export function SignInContent() {
         password,
       });
 
+      console.log("Sign in result:", result);
+
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
         router.push("/select-org");
+        return;
+      }
+
+      if (result.status === "needs_first_factor") {
+        const firstFactor = result.supportedFirstFactors?.[0];
+        if (!firstFactor) {
+          setError("Nenhum método de verificação disponível");
+          setLoading(false);
+          return;
+        }
+
+        if (firstFactor.strategy === "email_code") {
+          await signIn.prepareFirstFactor({ strategy: "email_code", emailAddressId: email });
+          setStep("email-code");
+          setPendingVerification({ strategy: "email_code", firstFactor: firstFactor.strategy });
+        } else if (firstFactor.strategy === "phone_code") {
+          await signIn.prepareFirstFactor({ strategy: "phone_code", phoneNumberId: firstFactor.phoneNumberId ?? "" });
+          setStep("phone-code");
+          setPendingVerification({ strategy: "phone_code", firstFactor: firstFactor.strategy });
+        } else {
+          setError("Método de verificação não suportado");
+        }
+      } else if (result.status === "needs_second_factor") {
+        const secondFactor = result.supportedSecondFactors?.[0];
+        if (secondFactor?.strategy === "totp") {
+          setStep("totp");
+          setPendingVerification({ strategy: "totp", firstFactor: "", secondFactor: secondFactor.strategy });
+        } else if (secondFactor?.strategy === "phone_code") {
+          await signIn.prepareSecondFactor({ strategy: "phone_code" });
+          setStep("phone-code");
+          setPendingVerification({ strategy: "phone_code", firstFactor: "", secondFactor: secondFactor.strategy });
+        } else {
+          setError("Verificação de dois fatores não suportada");
+        }
       } else {
-        console.log("Additional steps required:", result);
-        setError("Verificação adicional necessária");
+        console.log("Unknown status:", result.status, result);
+        setError("Estado de verificação desconhecido");
       }
     } catch (err: unknown) {
       console.error("Sign in error:", err);
       const error = err as { errors?: Array<{ message: string }> };
       setError(error.errors?.[0]?.message || "Erro ao entrar. Verifique suas credenciais.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isLoaded || !signIn) return;
+
+    setLoading(true);
+    setError("");
+
+    try {
+      let result;
+      
+      if (step === "email-code" || step === "phone-code") {
+        result = await signIn.attemptFirstFactor({
+          strategy: pendingVerification?.strategy as "email_code" | "phone_code",
+          code,
+        });
+      } else {
+        throw new Error("Invalid verification step");
+      }
+
+      console.log("Verification result:", result);
+
+      if (result.status === "complete") {
+        await setActive({ session: result.createdSessionId });
+        router.push("/select-org");
+      } else if (result.status === "needs_second_factor") {
+        const secondFactor = result.supportedSecondFactors?.[0];
+        if (secondFactor?.strategy === "totp") {
+          setStep("totp");
+          setCode("");
+          setPendingVerification({ strategy: "totp", firstFactor: "", secondFactor: secondFactor.strategy });
+        } else {
+          setError("Verificação adicional necessária");
+        }
+      } else {
+        setError("Verificação incompleta");
+      }
+    } catch (err: unknown) {
+      console.error("Verification error:", err);
+      const error = err as { errors?: Array<{ message: string }> };
+      setError(error.errors?.[0]?.message || "Código inválido. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTotpVerification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isLoaded || !signIn) return;
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const result = await signIn.attemptSecondFactor({
+        strategy: "totp",
+        code,
+      });
+
+      if (result.status === "complete") {
+        await setActive({ session: result.createdSessionId });
+        router.push("/select-org");
+      } else {
+        setError("Verificação incompleta");
+      }
+    } catch (err: unknown) {
+      console.error("TOTP error:", err);
+      const error = err as { errors?: Array<{ message: string }> };
+      setError(error.errors?.[0]?.message || "Código inválido. Tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -65,143 +183,230 @@ export function SignInContent() {
     }
   };
 
+  const renderStepTitle = () => {
+    switch (step) {
+      case "email-code":
+        return { title: "Verifique seu email", subtitle: "Enviamos um código para seu email" };
+      case "phone-code":
+        return { title: "Verifique seu telefone", subtitle: "Enviamos um código via SMS" };
+      case "totp":
+        return { title: "Verificação em duas etapas", subtitle: "Digite o código do seu aplicativo autenticador" };
+      default:
+        return { title: "Bem-vindo de volta", subtitle: "Entre na sua conta para continuar" };
+    }
+  };
+
+  const stepInfo = renderStepTitle();
+
+  if (step === "sign-in") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">
+        <div className="mb-8 text-center">
+          <Logo variant="full" size="lg" className="mx-auto" />
+          <h1 className="mt-6 text-2xl font-bold text-slate-900 dark:text-white">
+            {stepInfo.title}
+          </h1>
+          <p className="mt-2 text-slate-600 dark:text-slate-400">
+            {stepInfo.subtitle}
+          </p>
+        </div>
+
+        <div className="w-full max-w-md space-y-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="seu@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="h-12 pl-10"
+                    required
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Senha</Label>
+                  <Link href="/forgot-password" className="text-sm text-primary hover:text-primary/80">
+                    Esqueceu a senha?
+                  </Link>
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-12 pl-10"
+                    required
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+              {error && (
+                <p className="text-sm text-red-500 text-center">{error}</p>
+              )}
+
+              <Button type="submit" className="w-full h-12" disabled={loading || !isLoaded}>
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Entrando...
+                  </>
+                ) : (
+                  "Entrar"
+                )}
+              </Button>
+            </form>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <Separator className="w-full" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white dark:bg-slate-900 px-2 text-slate-500">
+                  ou continue com
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-12"
+                onClick={() => handleOAuthSignIn("oauth_google")}
+                disabled={loading || !isLoaded}
+              >
+                <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
+                  <path
+                    fill="currentColor"
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  />
+                  <path
+                    fill="currentColor"
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  />
+                  <path
+                    fill="currentColor"
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  />
+                  <path
+                    fill="currentColor"
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  />
+                </svg>
+                Google
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-12"
+                onClick={() => handleOAuthSignIn("oauth_facebook")}
+                disabled={loading || !isLoaded}
+              >
+                <svg className="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                </svg>
+                Facebook
+              </Button>
+            </div>
+          </div>
+
+          <p className="text-center text-sm text-slate-600 dark:text-slate-400">
+            Não tem uma conta?{" "}
+            <Link href="/sign-up" className="text-primary hover:text-primary/80 font-medium">
+              Criar conta
+            </Link>
+          </p>
+
+          <Link href="/" className="block">
+            <Button type="button" variant="ghost" className="w-full">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Voltar para home
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">
       <div className="mb-8 text-center">
         <Logo variant="full" size="lg" className="mx-auto" />
         <h1 className="mt-6 text-2xl font-bold text-slate-900 dark:text-white">
-          Bem-vindo de volta
+          {stepInfo.title}
         </h1>
         <p className="mt-2 text-slate-600 dark:text-slate-400">
-          Entre na sua conta para continuar
+          {stepInfo.subtitle}
         </p>
       </div>
 
       <div className="w-full max-w-md space-y-4">
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="h-12 pl-10"
-                  required
-                  disabled={loading}
-                />
-              </div>
+        <form onSubmit={step === "totp" ? handleTotpVerification : handleVerifyCode} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-4">
+          <div className="flex justify-center mb-4">
+            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <Shield className="h-8 w-8 text-primary" />
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Senha</Label>
-                <Link href="/forgot-password" className="text-sm text-primary hover:text-primary/80">
-                  Esqueceu a senha?
-                </Link>
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="h-12 pl-10"
-                  required
-                  disabled={loading}
-                />
-              </div>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="code">Código de verificação</Label>
+            <Input
+              id="code"
+              type="text"
+              placeholder="000000"
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              className="h-12 text-center text-lg tracking-widest"
+              maxLength={6}
+              required
+              disabled={loading}
+              autoFocus
+            />
+          </div>
 
-            {error && (
-              <p className="text-sm text-red-500 text-center">{error}</p>
+          {error && (
+            <p className="text-sm text-red-500 text-center">{error}</p>
+          )}
+
+          <Button type="submit" className="w-full h-12" disabled={loading || !isLoaded || code.length < 6}>
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Verificando...
+              </>
+            ) : (
+              "Verificar"
             )}
-
-            <Button type="submit" className="w-full h-12" disabled={loading || !isLoaded}>
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Entrando...
-                </>
-              ) : (
-                "Entrar"
-              )}
-            </Button>
-          </form>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <Separator className="w-full" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white dark:bg-slate-900 px-2 text-slate-500">
-                ou continue com
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              className="h-12"
-              onClick={() => handleOAuthSignIn("oauth_google")}
-              disabled={loading || !isLoaded}
-            >
-              <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
-                <path
-                  fill="currentColor"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                />
-              </svg>
-              Google
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="h-12"
-              onClick={() => handleOAuthSignIn("oauth_facebook")}
-              disabled={loading || !isLoaded}
-            >
-              <svg className="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-              </svg>
-              Facebook
-            </Button>
-          </div>
-        </div>
-
-        <p className="text-center text-sm text-slate-600 dark:text-slate-400">
-          Não tem uma conta?{" "}
-          <Link href="/sign-up" className="text-primary hover:text-primary/80 font-medium">
-            Criar conta
-          </Link>
-        </p>
-
-        <Link href="/" className="block">
-          <Button type="button" variant="ghost" className="w-full">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar para home
           </Button>
-        </Link>
+        </form>
+
+        <Button
+          type="button"
+          variant="ghost"
+          className="w-full"
+          onClick={() => {
+            setStep("sign-in");
+            setCode("");
+            setError("");
+            setPendingVerification(null);
+          }}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Voltar
+        </Button>
       </div>
     </div>
   );
