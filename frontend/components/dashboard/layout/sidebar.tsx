@@ -2,17 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, CalendarDays, Ship, Settings, HelpCircle, CreditCard, BarChart3, Calendar, Users } from "lucide-react";
+import { LayoutDashboard, CalendarDays, Tag, Settings, HelpCircle, CreditCard, BarChart3, Calendar, Users, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/ui/logo";
 
 const navigation = [
   { name: "Visão Geral", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Reservas", href: "/dashboard/bookings", icon: CalendarDays },
+  { name: "Agendamentos", href: "/dashboard/bookings", icon: CalendarDays },
   { name: "Calendário", href: "/dashboard/calendar", icon: Calendar },
   { name: "Clientes", href: "/dashboard/customers", icon: Users },
-  { name: "Recursos", href: "/dashboard/assets", icon: Ship },
-  { name: "Pagamentos", href: "/dashboard/payments", icon: CreditCard },
+  { name: "Serviços", href: "/dashboard/services", icon: Tag },
+  { name: "Profissionais", href: "/dashboard/staff", icon: User },
+  { name: "Financeiro", href: "/dashboard/payments", icon: CreditCard },
   { name: "Relatórios", href: "/dashboard/reports", icon: BarChart3 },
 ];
 

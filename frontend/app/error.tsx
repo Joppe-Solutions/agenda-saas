@@ -51,7 +51,7 @@ export default function Error({
 
         <p className="mt-8 text-sm text-muted-foreground">
           Se o problema persistir, entre em contato com o{" "}
-          <a href="mailto:suporte@reserva.online" className="text-primary hover:underline">
+          <a href="mailto:suporte@agendae.me" className="text-primary hover:underline">
             suporte
           </a>
         </p>

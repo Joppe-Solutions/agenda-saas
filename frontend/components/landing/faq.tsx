@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 const faqs = [
   {
-    question: "O reserva.online é gratuito?",
+    question: "O agendae.me é gratuito?",
     answer: "Sim! Temos um plano gratuito permanente que permite até 20 reservas por mês. É perfeito para quem está começando. Quando seu negócio crescer, você pode fazer upgrade para planos pagos com mais recursos.",
   },
   {
@@ -16,7 +16,7 @@ const faqs = [
   },
   {
     question: "Preciso de conhecimento técnico para usar?",
-    answer: "Não! O reserva.online foi feito para ser simples. Em menos de 2 minutos você cria sua conta e começa a receber reservas. Nossa equipe está disponível para ajudar no que precisar.",
+    answer: "Não! O agendae.me foi feito para ser simples. Em menos de 2 minutos você cria sua conta e começa a receber reservas. Nossa equipe está disponível para ajudar no que precisar.",
   },
   {
     question: "Posso usar com meu domínio personalizado?",
@@ -59,7 +59,7 @@ export function FAQ() {
             Perguntas frequentes
           </h2>
           <p className="mt-4 text-muted-foreground text-lg">
-            Tire suas dúvidas sobre o reserva.online.
+            Tire suas dúvidas sobre o agendae.me.
           </p>
         </motion.div>
 

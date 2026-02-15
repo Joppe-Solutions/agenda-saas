@@ -111,7 +111,7 @@ export function BookingCalendar({ merchantId }: BookingCalendarProps) {
 
         return {
           id: booking.id,
-          title: `${booking.customerName} - ${booking.resourceName || "Recurso"}`,
+          title: `${booking.customerName} - ${booking.serviceName || "Serviço"}`,
           start,
           end,
           resource: booking,

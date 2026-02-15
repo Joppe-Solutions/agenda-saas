@@ -48,7 +48,7 @@ export function CTA() {
                 className="h-12 px-8 text-base bg-transparent border-white/20 text-white hover:bg-white/10"
                 asChild
               >
-                <Link href="mailto:contato@reserva.online">Falar com Especialista</Link>
+                <Link href="mailto:contato@agendae.me">Falar com Especialista</Link>
               </Button>
             </div>
           </div>

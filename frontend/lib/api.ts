@@ -1,8 +1,11 @@
 import type { 
-  Resource, Booking, CreateBookingInput, Merchant, CreateResourceInput, 
-  UpdateResourceInput, UpsertMerchantInput, Payment, TimeSlot, AvailabilityRule,
-  CreateAvailabilityRuleInput, Block, CreateBlockInput, ResourceTemplate,
-  DashboardStats, BookingStatus, Customer, CustomerTag
+  Service, Booking, CreateBookingInput, Merchant, CreateServiceInput, 
+  UpdateServiceInput, UpsertMerchantInput, Payment, TimeSlot,
+  StaffMember, CreateStaffInput, UpdateStaffInput,
+  StaffAvailability, CreateAvailabilityInput,
+  StaffBlock, CreateBlockInput,
+  ServiceCategory, DashboardStats, BookingStatus, Customer, CustomerTag,
+  PublicMerchantData
 } from "@/lib/types";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_ENCORE_API_URL ?? "http://localhost:4000";
@@ -25,8 +28,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return (await res.json()) as T;
 }
 
-export async function getPublicMerchant(slug: string) {
-  return request<{ merchant: Merchant; resources: Resource[] }>(`/public/merchant/${slug}`);
+export async function getPublicMerchant(slug: string): Promise<PublicMerchantData> {
+  return request<PublicMerchantData>(`/public/merchant/${slug}`);
 }
 
 export async function getMerchantProfile(merchantId: string) {
@@ -40,26 +43,6 @@ export async function upsertMerchantProfile(data: UpsertMerchantInput) {
   });
 }
 
-export async function updateSignalConfig(
-  merchantId: string, 
-  data: { signalPercentage?: number; signalDeadlineMinutes?: number; signalAutoCancel?: boolean }
-) {
-  return request<{ ok: boolean }>(`/merchant/${merchantId}/signal-config`, {
-    method: "PATCH",
-    body: JSON.stringify(data),
-  });
-}
-
-export async function updateCancellationPolicy(
-  merchantId: string, 
-  data: { deadlineHours?: number; refundPercentage?: number }
-) {
-  return request<{ ok: boolean }>(`/merchant/${merchantId}/cancellation-policy`, {
-    method: "PATCH",
-    body: JSON.stringify(data),
-  });
-}
-
 export async function getDashboardSummary(merchantId: string): Promise<DashboardStats> {
   return request<DashboardStats>(`/merchant/${merchantId}/dashboard`);
 }
@@ -68,99 +51,124 @@ export async function getTodaysBookings(merchantId: string) {
   return request<{ bookings: Booking[] }>(`/merchant/${merchantId}/bookings/today`);
 }
 
-export async function getResourceTemplates() {
-  return request<{ templates: ResourceTemplate[] }>("/resource-templates");
+export async function listMerchantServices(merchantId: string) {
+  return request<{ services: Service[] }>(`/merchant/${merchantId}/services`);
 }
 
-export async function listMerchantResources(merchantId: string) {
-  return request<{ resources: Resource[] }>(`/merchant/${merchantId}/resources`);
+export async function getService(serviceId: string) {
+  return request<{ service: Service }>(`/service/${serviceId}`);
 }
 
-export async function getResource(resourceId: string) {
-  return request<{ resource: Resource }>(`/resource/${resourceId}`);
-}
-
-export async function createResource(data: CreateResourceInput) {
-  return request<{ resource: Resource }>("/resource", {
+export async function createService(data: CreateServiceInput) {
+  return request<{ service: Service }>("/service", {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
-export async function updateResource(resourceId: string, data: UpdateResourceInput) {
-  return request<{ resource: Resource }>(`/resource/${resourceId}`, {
+export async function updateService(serviceId: string, data: UpdateServiceInput) {
+  return request<{ service: Service }>(`/service/${serviceId}`, {
     method: "PATCH",
     body: JSON.stringify(data),
   });
 }
 
-export async function deleteResource(resourceId: string) {
-  return request<{ ok: boolean }>(`/resource/${resourceId}`, {
+export async function deleteService(serviceId: string) {
+  return request<{ ok: boolean }>(`/service/${serviceId}`, {
     method: "DELETE",
   });
 }
 
-export async function listAvailabilityRules(resourceId: string) {
-  return request<{ rules: AvailabilityRule[] }>(`/resource/${resourceId}/availability`);
+export async function listServiceCategories(merchantId: string) {
+  return request<{ categories: ServiceCategory[] }>(`/merchant/${merchantId}/categories`);
 }
 
-export async function createAvailabilityRule(data: CreateAvailabilityRuleInput) {
-  return request<{ rule: AvailabilityRule }>("/availability-rule", {
+export async function createServiceCategory(merchantId: string, name: string, icon?: string, color?: string) {
+  return request<{ category: ServiceCategory }>("/service-category", {
+    method: "POST",
+    body: JSON.stringify({ merchantId, name, icon, color }),
+  });
+}
+
+export async function deleteServiceCategory(categoryId: string) {
+  return request<{ ok: boolean }>(`/service-category/${categoryId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function listMerchantStaff(merchantId: string) {
+  return request<{ staff: StaffMember[] }>(`/merchant/${merchantId}/staff`);
+}
+
+export async function getStaffMember(staffId: string) {
+  return request<{ staff: StaffMember }>(`/staff/${staffId}`);
+}
+
+export async function createStaffMember(data: CreateStaffInput) {
+  return request<{ staff: StaffMember }>("/staff", {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
-export async function deleteAvailabilityRule(ruleId: string) {
-  return request<{ ok: boolean }>(`/availability-rule/${ruleId}`, {
+export async function updateStaffMember(staffId: string, data: UpdateStaffInput) {
+  return request<{ staff: StaffMember }>(`/staff/${staffId}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteStaffMember(staffId: string) {
+  return request<{ ok: boolean }>(`/staff/${staffId}`, {
     method: "DELETE",
   });
 }
 
-export async function setAvailabilityRules(resourceId: string, rules: Omit<CreateAvailabilityRuleInput, 'resourceId'>[]) {
-  return request<{ ok: boolean }>(`/resource/${resourceId}/availability/set`, {
+export async function listStaffAvailability(staffId: string) {
+  return request<{ availability: StaffAvailability[] }>(`/staff/${staffId}/availability`);
+}
+
+export async function setStaffAvailability(staffId: string, availability: CreateAvailabilityInput[]) {
+  return request<{ ok: boolean }>(`/staff/${staffId}/availability/set`, {
     method: "POST",
-    body: JSON.stringify({ rules }),
+    body: JSON.stringify({ availability }),
   });
 }
 
-export async function listBlocks(resourceId: string) {
-  return request<{ blocks: Block[] }>(`/resource/${resourceId}/blocks`);
+export async function listStaffBlocks(staffId: string) {
+  return request<{ blocks: StaffBlock[] }>(`/staff/${staffId}/blocks`);
 }
 
-export async function createBlock(data: CreateBlockInput) {
-  return request<{ block: Block }>("/block", {
+export async function createStaffBlock(data: CreateBlockInput) {
+  return request<{ block: StaffBlock }>("/staff-block", {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
-export async function deleteBlock(blockId: string) {
-  return request<{ ok: boolean }>(`/block/${blockId}`, {
+export async function deleteStaffBlock(blockId: string) {
+  return request<{ ok: boolean }>(`/staff-block/${blockId}`, {
     method: "DELETE",
   });
 }
 
-export async function getAvailableSlots(resourceId: string, date: string) {
-  return request<{ slots: TimeSlot[] }>(`/resource/${resourceId}/slots/${date}`);
+export async function getAvailableSlots(serviceId: string, date: string, staffId?: string) {
+  const query = staffId ? `?staffId=${staffId}` : "";
+  return request<{ slots: TimeSlot[] }>(`/service/${serviceId}/slots/${date}${query}`);
 }
 
-export async function checkAvailability(resourceId: string, date: string) {
-  return request<{ available: boolean }>(`/booking/availability/${resourceId}/${date}`);
-}
-
-export async function checkTimeSlotAvailability(resourceId: string, date: string, startTime: string, endTime: string) {
-  return request<{ available: boolean }>(`/booking/availability/${resourceId}/${date}/${startTime}/${endTime}`);
+export async function getStaffAvailableSlots(staffId: string, serviceId: string, date: string) {
+  return request<{ slots: TimeSlot[] }>(`/staff/${staffId}/slots/${serviceId}/${date}`);
 }
 
 export async function createBooking(payload: CreateBookingInput) {
   return request<{
     bookingId: string;
-    status: "pending_payment";
+    status: "pending_payment" | "confirmed";
     depositAmount: number;
     totalAmount: number;
-    signalExpiresAt: string;
-    payment: {
+    depositExpiresAt?: string;
+    payment?: {
       paymentId: string;
       qrCode: string;
       copyPasteCode: string;
@@ -178,12 +186,13 @@ export async function getBooking(bookingId: string) {
 
 export async function listMerchantBookings(
   merchantId: string, 
-  filters?: { status?: BookingStatus; fromDate?: string; toDate?: string }
+  filters?: { status?: BookingStatus; fromDate?: string; toDate?: string; staffId?: string }
 ) {
   const params = new URLSearchParams();
   if (filters?.status) params.set("status", filters.status);
   if (filters?.fromDate) params.set("fromDate", filters.fromDate);
   if (filters?.toDate) params.set("toDate", filters.toDate);
+  if (filters?.staffId) params.set("staffId", filters.staffId);
   
   const query = params.toString() ? `?${params.toString()}` : "";
   return request<{ bookings: Booking[] }>(`/merchant/${merchantId}/bookings${query}`);
@@ -221,11 +230,18 @@ export async function getReportsSummary(merchantId: string, period?: "day" | "we
     pendingRevenue: number;
     avgBookingValue: number;
     noShowRate: number;
-    topResources: Array<{
-      resourceId: string;
-      resourceName: string;
+    topServices: Array<{
+      serviceId: string;
+      serviceName: string;
       bookingCount: number;
       revenue: number;
+    }>;
+    topStaff: Array<{
+      staffId: string;
+      staffName: string;
+      bookingCount: number;
+      revenue: number;
+      commission: number;
     }>;
     dailyBreakdown: Array<{
       date: string;
@@ -238,18 +254,7 @@ export async function getReportsSummary(merchantId: string, period?: "day" | "we
 export async function getCustomersList(merchantId: string, search?: string) {
   const query = search ? `?search=${encodeURIComponent(search)}` : "";
   return request<{
-    customers: Array<{
-      id: string;
-      name: string;
-      phone: string;
-      email?: string;
-      document?: string;
-      notes?: string;
-      createdAt: string;
-      totalBookings: number;
-      totalSpent: number;
-      lastBookingDate?: string;
-    }>;
+    customers: Customer[];
   }>(`/merchant/${merchantId}/customers${query}`);
 }
 
@@ -268,7 +273,7 @@ export async function getCustomerHistory(customerId: string) {
 
 export async function rescheduleBooking(
   bookingId: string,
-  data: { newDate: string; newStartTime?: string; newEndTime?: string }
+  data: { newDate: string; newStartTime?: string; staffId?: string }
 ) {
   return request<{ booking: Booking }>(`/booking/${bookingId}/reschedule`, {
     method: "POST",
@@ -298,13 +303,14 @@ export async function getBookingReceipt(bookingId: string) {
       customerPhone: string;
       customerEmail?: string;
       bookingDate: string;
-      startTime?: string;
-      endTime?: string;
-      peopleCount: number;
+      startTime: string;
+      endTime: string;
       status: string;
       depositAmount: number;
       totalAmount: number;
       createdAt: string;
+      serviceName: string;
+      staffName?: string;
     };
     merchant: {
       businessName: string;
@@ -315,9 +321,9 @@ export async function getBookingReceipt(bookingId: string) {
       city?: string;
       pixKey: string;
     };
-    resource: {
+    service: {
       name: string;
-      type: string;
+      durationMinutes: number;
     };
     payment?: {
       id: string;
@@ -328,12 +334,53 @@ export async function getBookingReceipt(bookingId: string) {
   }>(`/booking/${bookingId}/receipt`);
 }
 
-export async function listCustomerTags(merchantId: string) {
-  return request<{ tags: CustomerTag[] }>(`/merchant/${merchantId}/customer-tags`);
+export async function updateMerchantSettings(
+  merchantId: string,
+  data: {
+    requireDeposit?: boolean;
+    depositPercentage?: number;
+    depositDeadlineMinutes?: number;
+    autoConfirmOnPayment?: boolean;
+    allowOnlinePayment?: boolean;
+    enableReminders?: boolean;
+    reminderHoursBefore?: number;
+    enableLoyalty?: boolean;
+    pointsPerReal?: number;
+    cancellationDeadlineHours?: number;
+    cancellationRefundPercentage?: number;
+  }
+) {
+  return request<{ ok: boolean }>(`/merchant/${merchantId}/settings`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
 }
 
-export async function createCustomerTag(merchantId: string, name: string, color?: string) {
-  return request<{ tag: CustomerTag }>("/customer-tag", {
+export async function getStaffSchedule(staffId: string, fromDate: string, toDate: string) {
+  return request<{
+    bookings: Booking[];
+    blocks: StaffBlock[];
+  }>(`/staff/${staffId}/schedule?fromDate=${fromDate}&toDate=${toDate}`);
+}
+
+export async function updateCancellationPolicy(
+  merchantId: string,
+  data: { deadlineHours: number; refundPercentage: number }
+) {
+  return request<{ ok: boolean }>(`/merchant/${merchantId}/cancellation-policy`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function listCustomerTags(merchantId: string) {
+  return request<{ tags: Array<{ id: string; name: string; color: string; merchantId: string }> }>(
+    `/merchant/${merchantId}/customer-tags`
+  );
+}
+
+export async function createCustomerTag(merchantId: string, name: string, color: string) {
+  return request<{ tag: { id: string; name: string; color: string; merchantId: string } }>("/customer-tag", {
     method: "POST",
     body: JSON.stringify({ merchantId, name, color }),
   });
@@ -346,22 +393,14 @@ export async function deleteCustomerTag(tagId: string) {
 }
 
 export async function assignTagToCustomer(customerId: string, tagId: string) {
-  return request<{ ok: boolean }>(`/customer/${customerId}/tag/${tagId}`, {
+  return request<{ ok: boolean }>(`/customer/${customerId}/tags`, {
     method: "POST",
+    body: JSON.stringify({ tagId }),
   });
 }
 
 export async function removeTagFromCustomer(customerId: string, tagId: string) {
-  return request<{ ok: boolean }>(`/customer/${customerId}/tag/${tagId}`, {
+  return request<{ ok: boolean }>(`/customer/${customerId}/tags/${tagId}`, {
     method: "DELETE",
   });
 }
-
-export { Resource as Asset };
-export { CreateResourceInput as CreateAssetInput };
-export { UpdateResourceInput as UpdateAssetInput };
-export { listMerchantResources as listMerchantAssets };
-export { getResource as getAsset };
-export { createResource as createAsset };
-export { updateResource as updateAsset };
-export { deleteResource as deleteAsset };

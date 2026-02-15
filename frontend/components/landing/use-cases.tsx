@@ -93,7 +93,7 @@ export function UseCases() {
             Para todo tipo de negócio
           </h2>
           <p className="mt-4 text-slate-400 text-lg">
-            De barcos de pesca a estúdios de yoga. O reserva.online se adapta ao seu negócio.
+            De barcos de pesca a estúdios de yoga. O agendae.me se adapta ao seu negócio.
           </p>
         </motion.div>
 

@@ -5,14 +5,14 @@ export default function TermosPage() {
     <LegalLayout title="Termos de Uso" lastUpdated="14 de fevereiro de 2026">
       <h2>1. Aceitação dos Termos</h2>
       <p>
-        Ao acessar e usar o reserva.online, você concorda em cumprir e estar vinculado a estes Termos de Uso.
+        Ao acessar e usar o agendae.me, você concorda em cumprir e estar vinculado a estes Termos de Uso.
         Se você não concordar com qualquer parte destes termos, não poderá acessar o serviço.
       </p>
 
       <h2>2. Descrição do Serviço</h2>
       <p>
-        O reserva.online é uma plataforma de gestão de reservas online que permite a empresários e prestadores
-        de serviços gerenciar agendamentos, receber pagamentos e se comunicar com clientes.
+        O agendae.me é uma plataforma de gestão de agendamentos online que permite a empresários e prestadores
+        de serviços gerenciar horários, receber pagamentos e se comunicar com clientes.
       </p>
 
       <h2>3. Cadastro e Conta</h2>
@@ -39,13 +39,13 @@ export default function TermosPage() {
 
       <h2>6. Propriedade Intelectual</h2>
       <p>
-        O serviço e seu conteúdo original, recursos e funcionalidade são de propriedade exclusiva do reserva.online
+        O serviço e seu conteúdo original, recursos e funcionalidade são de propriedade exclusiva do agendae.me
         e estão protegidos por leis de direitos autorais, marcas registradas e outras leis de propriedade intelectual.
       </p>
 
       <h2>7. Limitação de Responsabilidade</h2>
       <p>
-        Em nenhum caso o reserva.online será responsável por danos indiretos, incidentais, especiais, consequenciais
+        Em nenhum caso o agendae.me será responsável por danos indiretos, incidentais, especiais, consequenciais
         ou punitivos, incluindo perda de lucros, dados ou outras perdas intangíveis.
       </p>
 
@@ -58,8 +58,8 @@ export default function TermosPage() {
       <h2>9. Contato</h2>
       <p>
         Se você tiver alguma dúvida sobre estes Termos, entre em contato conosco através do e-mail{" "}
-        <a href="mailto:contato@reserva.online" className="text-primary hover:underline">
-          contato@reserva.online
+        <a href="mailto:contato@agendae.me" className="text-primary hover:underline">
+          contato@agendae.me
         </a>
         .
       </p>

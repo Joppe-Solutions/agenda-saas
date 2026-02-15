@@ -46,7 +46,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           <p className="text-sm text-white/40">
-            © {new Date().getFullYear()} reserva.online. Todos os direitos reservados.
+            © {new Date().getFullYear()} agendae.me. Todos os direitos reservados.
           </p>
         </div>
       </div>

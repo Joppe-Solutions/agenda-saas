@@ -15,18 +15,11 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { getMerchantProfile, upsertMerchantProfile, updateCancellationPolicy } from "@/lib/api";
-import type { Merchant, MerchantNiche } from "@/lib/types";
+import type { Merchant, BusinessCategory, BUSINESS_CATEGORY_LABELS } from "@/lib/types";
 
 interface SettingsPageProps {
   merchantId: string;
 }
-
-const nicheLabels: Record<MerchantNiche, string> = {
-  FISHING: "Pesca Esportiva",
-  SPORTS: "Esportes",
-  TOURISM: "Turismo",
-  SERVICES: "Serviços",
-};
 
 export function SettingsPage({ merchantId }: SettingsPageProps) {
   const [loading, setLoading] = useState(true);
@@ -39,7 +32,7 @@ export function SettingsPage({ merchantId }: SettingsPageProps) {
   const [formData, setFormData] = useState({
     businessName: "",
     slug: "",
-    niche: "SERVICES" as MerchantNiche,
+    businessCategory: "SERVICES" as BusinessCategory,
     whatsappNumber: "",
     pixKey: "",
     mercadoPagoAccessToken: "",
@@ -60,7 +53,7 @@ export function SettingsPage({ merchantId }: SettingsPageProps) {
         setFormData({
           businessName: data.merchant.businessName,
           slug: data.merchant.slug,
-          niche: data.merchant.niche,
+          businessCategory: data.merchant.businessCategory,
           whatsappNumber: data.merchant.whatsappNumber,
           pixKey: data.merchant.pixKey,
           mercadoPagoAccessToken: data.merchant.mercadoPagoAccessToken ?? "",
@@ -88,7 +81,7 @@ export function SettingsPage({ merchantId }: SettingsPageProps) {
         id: merchantId,
         businessName: formData.businessName,
         slug: formData.slug,
-        niche: formData.niche,
+        businessCategory: formData.businessCategory,
         whatsappNumber: formData.whatsappNumber,
         pixKey: formData.pixKey,
         mercadoPagoAccessToken: formData.mercadoPagoAccessToken || undefined,
@@ -170,7 +163,7 @@ export function SettingsPage({ merchantId }: SettingsPageProps) {
           <div className="space-y-2">
             <Label htmlFor="slug">URL da Página</Label>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">reserva.online/</span>
+              <span className="text-sm text-muted-foreground">agendae.me/</span>
               <Input
                 id="slug"
                 value={formData.slug}
@@ -180,19 +173,21 @@ export function SettingsPage({ merchantId }: SettingsPageProps) {
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="niche">Categoria</Label>
+            <Label htmlFor="businessCategory">Categoria</Label>
             <Select
-              value={formData.niche}
-              onValueChange={(value) => setFormData({ ...formData, niche: value as MerchantNiche })}
+              value={formData.businessCategory}
+              onValueChange={(value) => setFormData({ ...formData, businessCategory: value as BusinessCategory })}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="FISHING">Pesca Esportiva</SelectItem>
-                <SelectItem value="SPORTS">Esportes</SelectItem>
-                <SelectItem value="TOURISM">Turismo</SelectItem>
-                <SelectItem value="SERVICES">Serviços</SelectItem>
+                <SelectItem value="BEAUTY">Beleza e Estética</SelectItem>
+                <SelectItem value="HEALTH">Saúde</SelectItem>
+                <SelectItem value="WELLNESS">Bem-estar</SelectItem>
+                <SelectItem value="EDUCATION">Educação</SelectItem>
+                <SelectItem value="SERVICES">Serviços Gerais</SelectItem>
+                <SelectItem value="PET">Pet</SelectItem>
               </SelectContent>
             </Select>
           </div>

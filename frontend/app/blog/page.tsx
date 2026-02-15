@@ -43,7 +43,7 @@ export default function BlogPage() {
 
       <footer className="border-t bg-muted/30">
         <div className="container mx-auto max-w-4xl px-4 py-8 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} reserva.online. Todos os direitos reservados.</p>
+          <p>© {new Date().getFullYear()} agendae.me. Todos os direitos reservados.</p>
           <div className="mt-4 flex justify-center gap-6">
             <Link href="/privacidade" className="hover:text-foreground transition-colors">Privacidade</Link>
             <Link href="/termos" className="hover:text-foreground transition-colors">Termos</Link>

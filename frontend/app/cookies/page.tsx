@@ -91,8 +91,8 @@ export default function CookiesPage() {
       <h2>7. Contato</h2>
       <p>
         Se você tiver dúvidas sobre nossa política de cookies, entre em contato através do e-mail{" "}
-        <a href="mailto:contato@reserva.online" className="text-primary hover:underline">
-          contato@reserva.online
+        <a href="mailto:contato@agendae.me" className="text-primary hover:underline">
+          contato@agendae.me
         </a>
         .
       </p>

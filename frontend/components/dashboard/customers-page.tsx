@@ -402,7 +402,10 @@ export function CustomersPage({ merchantId }: CustomersPageProps) {
                         className="flex items-center justify-between rounded-lg border p-3"
                       >
                         <div>
-                          <p className="font-medium text-sm">{booking.resourceName}</p>
+                          <p className="font-medium text-sm">{booking.serviceName}</p>
+                          {booking.staffName && (
+                            <p className="text-xs text-muted-foreground">{booking.staffName}</p>
+                          )}
                           <p className="text-xs text-muted-foreground">
                             {format(new Date(booking.bookingDate + "T12:00:00"), "dd 'de' MMM 'de' yyyy", { locale: ptBR })}
                             {booking.startTime && ` • ${booking.startTime}`}

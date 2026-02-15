@@ -1,15 +1,25 @@
-export type MerchantNiche = "FISHING" | "SPORTS" | "TOURISM" | "SERVICES";
-export type ResourceType = "BOAT" | "SPORTS_COURT" | "CONSULTING_ROOM" | "EVENT_SPACE" | "EQUIPMENT" | "PROFESSIONAL" | "VACATION_RENTAL" | "OTHER";
-export type PricingType = "FULL_DAY" | "HOURLY" | "SLOT" | "PER_PERSON";
+export type BusinessCategory = 
+  | "BEAUTY"      // Salões, barbearias, estética
+  | "HEALTH"      // Clínicas, consultórios
+  | "WELLNESS"    // Yoga, pilates, spas
+  | "EDUCATION"   // Aulas particulares
+  | "SERVICES"    // Outros serviços
+  | "PET";        // Pet shops, veterinários
+
 export type BookingStatus = "pending_payment" | "confirmed" | "in_progress" | "completed" | "cancelled" | "no_show";
-export type BlockReason = "maintenance" | "vacation" | "weather" | "other";
+
+export type PaymentStatus = "pending" | "approved" | "rejected" | "refunded";
+export type PaymentMethod = "PIX" | "CREDIT_CARD" | "CASH";
+export type PaymentProvider = "MERCADO_PAGO" | "STUB";
+
+export type BlockReason = "day_off" | "vacation" | "holiday" | "other";
 
 export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
-  pending_payment: "Aguardando Sinal",
-  confirmed: "Confirmada",
-  in_progress: "Em Andamento",
-  completed: "Concluída",
-  cancelled: "Cancelada",
+  pending_payment: "Aguardando Pagamento",
+  confirmed: "Confirmado",
+  in_progress: "Em Atendimento",
+  completed: "Concluído",
+  cancelled: "Cancelado",
   no_show: "Não Compareceu",
 };
 
@@ -22,85 +32,118 @@ export const BOOKING_STATUS_COLORS: Record<BookingStatus, string> = {
   no_show: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
 };
 
-export const RESOURCE_TYPE_LABELS: Record<ResourceType, string> = {
-  BOAT: "Barco",
-  SPORTS_COURT: "Quadra Esportiva",
-  CONSULTING_ROOM: "Consultório/Sala",
-  EVENT_SPACE: "Espaço de Eventos",
-  EQUIPMENT: "Equipamento",
-  PROFESSIONAL: "Profissional",
-  VACATION_RENTAL: "Imóvel Temporada",
-  OTHER: "Outro",
+export const BUSINESS_CATEGORY_LABELS: Record<BusinessCategory, string> = {
+  BEAUTY: "Beleza e Estética",
+  HEALTH: "Saúde",
+  WELLNESS: "Bem-estar",
+  EDUCATION: "Educação",
+  SERVICES: "Serviços Gerais",
+  PET: "Pet",
 };
 
-export const RESOURCE_TYPE_ICONS: Record<ResourceType, string> = {
-  BOAT: "🚤",
-  SPORTS_COURT: "⚽",
-  CONSULTING_ROOM: "🏥",
-  EVENT_SPACE: "🎉",
-  EQUIPMENT: "🎮",
-  PROFESSIONAL: "✂️",
-  VACATION_RENTAL: "🏠",
-  OTHER: "📦",
+export const BUSINESS_CATEGORY_ICONS: Record<BusinessCategory, string> = {
+  BEAUTY: "💇",
+  HEALTH: "🏥",
+  WELLNESS: "🧘",
+  EDUCATION: "📚",
+  SERVICES: "🔧",
+  PET: "🐾",
 };
 
 export interface Merchant {
   id: string;
   slug: string;
   businessName: string;
-  niche: MerchantNiche;
+  businessCategory: BusinessCategory;
   whatsappNumber: string;
   pixKey: string;
   email?: string;
   mercadoPagoAccessToken?: string;
   address?: string;
   city?: string;
-  signalPercentage: number;
-  signalDeadlineMinutes: number;
-  signalAutoCancel: boolean;
+  logo?: string;
+  primaryColor?: string;
+  requireDeposit: boolean;
+  depositPercentage: number;
+  depositDeadlineMinutes: number;
+  autoConfirmOnPayment: boolean;
+  allowOnlinePayment: boolean;
   cancellationDeadlineHours: number;
   cancellationRefundPercentage: number;
+  enableReminders: boolean;
+  reminderHoursBefore: number;
+  enableLoyalty: boolean;
+  pointsPerReal: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface Resource {
+export interface ServiceCategory {
   id: string;
   merchantId: string;
   name: string;
-  description?: string;
-  resourceType: ResourceType;
-  capacity: number;
-  basePrice: number;
-  pricingType: PricingType;
-  durationMinutes?: number;
-  bufferBeforeMinutes: number;
-  bufferAfterMinutes: number;
-  photos: string[];
-  terms?: string;
+  icon?: string;
+  color?: string;
+  order: number;
   active: boolean;
 }
 
-export interface AvailabilityRule {
+export interface Service {
   id: string;
-  resourceId: string;
+  merchantId: string;
+  categoryId?: string;
+  name: string;
+  description?: string;
+  durationMinutes: number;
+  price: number;
+  bufferBeforeMinutes: number;
+  bufferAfterMinutes: number;
+  maxConcurrentBookings: number;
+  photos: string[];
+  active: boolean;
+  requireDeposit: boolean;
+  depositAmount?: number;
+  depositPercentage?: number;
+  allowStaffSelection: boolean;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+  category?: ServiceCategory;
+  staffMembers?: StaffMember[];
+}
+
+export interface StaffMember {
+  id: string;
+  merchantId: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  photo?: string;
+  bio?: string;
+  active: boolean;
+  commissionPercentage?: number;
+  services: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StaffAvailability {
+  id: string;
+  staffId: string;
   dayOfWeek: number;
   startTime: string;
   endTime: string;
-  slotDurationMinutes: number;
-  bufferBeforeMinutes: number;
-  bufferAfterMinutes: number;
+  breakStart?: string;
+  breakEnd?: string;
 }
 
-export interface Block {
+export interface StaffBlock {
   id: string;
-  resourceId: string;
+  staffId: string;
   startTime: string;
   endTime: string;
   reason: BlockReason;
-  notes: string;
-  recurring: {
-    frequency: "daily" | "weekly" | "monthly";
-    until: string;
-  } | null;
+  notes?: string;
 }
 
 export interface Customer {
@@ -110,7 +153,13 @@ export interface Customer {
   phone: string;
   email?: string;
   document?: string;
+  birthDate?: string;
   notes?: string;
+  loyaltyPoints: number;
+  totalBookings: number;
+  totalSpent: number;
+  lastVisit?: string;
+  createdAt: string;
 }
 
 export interface CustomerTag {
@@ -122,27 +171,31 @@ export interface CustomerTag {
 
 export interface Booking {
   id: string;
-  resourceId: string;
+  serviceId: string;
+  staffId?: string;
   merchantId: string;
   customerId?: string;
   customerName: string;
   customerPhone: string;
   customerEmail?: string;
   bookingDate: string;
-  startTime?: string;
-  endTime?: string;
-  peopleCount: number;
+  startTime: string;
+  endTime: string;
   status: BookingStatus;
   depositAmount: number;
   totalAmount: number;
   paymentId: string | null;
+  paymentMethod?: PaymentMethod;
   qrCode?: string;
   copyPasteCode?: string;
   notes?: string;
   internalNotes?: string;
-  signalExpiresAt?: string;
-  createdAt?: string;
-  resourceName?: string;
+  depositExpiresAt?: string;
+  reminderSentAt?: string;
+  loyaltyPointsEarned: number;
+  createdAt: string;
+  serviceName?: string;
+  staffName?: string;
 }
 
 export interface Payment {
@@ -150,9 +203,9 @@ export interface Payment {
   bookingId: string;
   merchantId: string;
   amount: number;
-  status: "pending" | "approved" | "rejected" | "refunded";
-  paymentMethod: "PIX";
-  provider: "MERCADO_PAGO" | "STUB";
+  status: PaymentStatus;
+  paymentMethod: PaymentMethod;
+  provider: PaymentProvider;
   providerPaymentId: string;
   qrCode?: string;
   copyPasteCode?: string;
@@ -164,107 +217,151 @@ export interface TimeSlot {
   startTime: string;
   endTime: string;
   available: boolean;
+  staffId?: string;
+  staffName?: string;
 }
 
-export interface ResourceTemplate {
-  type: ResourceType;
-  name: string;
-  icon: string;
-  defaultCapacity: number;
-  defaultPricingType: PricingType;
-  defaultDurationMinutes?: number;
-  description: string;
+export interface DaySchedule {
+  date: string;
+  slots: TimeSlot[];
 }
 
 export interface DashboardStats {
   bookingsToday: number;
   pendingToday: number;
   monthRevenue: number;
-  pendingBookings: number;
-  totalResources: number;
-  activeResources: number;
+  pendingPayments: number;
+  totalServices: number;
+  activeServices: number;
+  totalStaff: number;
+  activeStaff: number;
+  totalCustomers: number;
+  newCustomersMonth: number;
+}
+
+export interface CreateServiceInput {
+  merchantId: string;
+  categoryId?: string;
+  name: string;
+  description?: string;
+  durationMinutes: number;
+  price: number;
+  bufferBeforeMinutes?: number;
+  bufferAfterMinutes?: number;
+  maxConcurrentBookings?: number;
+  photos?: string[];
+  active?: boolean;
+  requireDeposit?: boolean;
+  depositAmount?: number;
+  depositPercentage?: number;
+  allowStaffSelection?: boolean;
+}
+
+export interface UpdateServiceInput {
+  categoryId?: string;
+  name?: string;
+  description?: string;
+  durationMinutes?: number;
+  price?: number;
+  bufferBeforeMinutes?: number;
+  bufferAfterMinutes?: number;
+  maxConcurrentBookings?: number;
+  photos?: string[];
+  active?: boolean;
+  requireDeposit?: boolean;
+  depositAmount?: number;
+  depositPercentage?: number;
+  allowStaffSelection?: boolean;
+}
+
+export interface CreateStaffInput {
+  merchantId: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  photo?: string;
+  bio?: string;
+  commissionPercentage?: number;
+  services: string[];
+}
+
+export interface UpdateStaffInput {
+  name?: string;
+  email?: string;
+  phone?: string;
+  photo?: string;
+  bio?: string;
+  active?: boolean;
+  commissionPercentage?: number;
+  services?: string[];
+}
+
+export interface CreateAvailabilityInput {
+  staffId: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  breakStart?: string;
+  breakEnd?: string;
+}
+
+export interface CreateBlockInput {
+  staffId: string;
+  startTime: string;
+  endTime: string;
+  reason: BlockReason;
+  notes?: string;
 }
 
 export interface CreateBookingInput {
-  resourceId: string;
+  serviceId: string;
+  staffId?: string;
   merchantId: string;
   customerName: string;
   customerPhone: string;
   customerEmail?: string;
   bookingDate: string;
-  startTime?: string;
-  endTime?: string;
-  peopleCount: number;
+  startTime: string;
   notes?: string;
-}
-
-export interface CreateResourceInput {
-  merchantId: string;
-  name: string;
-  description?: string;
-  resourceType: ResourceType;
-  capacity: number;
-  basePrice: number;
-  pricingType: PricingType;
-  durationMinutes?: number;
-  bufferBeforeMinutes?: number;
-  bufferAfterMinutes?: number;
-  photos?: string[];
-  terms?: string;
-  active?: boolean;
-}
-
-export interface UpdateResourceInput {
-  name?: string;
-  description?: string;
-  resourceType?: ResourceType;
-  capacity?: number;
-  basePrice?: number;
-  pricingType?: PricingType;
-  durationMinutes?: number;
-  bufferBeforeMinutes?: number;
-  bufferAfterMinutes?: number;
-  photos?: string[];
-  terms?: string;
-  active?: boolean;
 }
 
 export interface UpsertMerchantInput {
   id: string;
   slug: string;
   businessName: string;
-  niche: MerchantNiche;
+  businessCategory: BusinessCategory;
   whatsappNumber: string;
   pixKey: string;
   email?: string;
   mercadoPagoAccessToken?: string;
   address?: string;
   city?: string;
-  signalPercentage?: number;
-  signalDeadlineMinutes?: number;
-  signalAutoCancel?: boolean;
+  logo?: string;
+  primaryColor?: string;
+  requireDeposit?: boolean;
+  depositPercentage?: number;
+  depositDeadlineMinutes?: number;
+  autoConfirmOnPayment?: boolean;
+  allowOnlinePayment?: boolean;
+  cancellationDeadlineHours?: number;
+  cancellationRefundPercentage?: number;
+  enableReminders?: boolean;
+  reminderHoursBefore?: number;
+  enableLoyalty?: boolean;
+  pointsPerReal?: number;
 }
 
-export interface CreateAvailabilityRuleInput {
-  resourceId: string;
-  dayOfWeek: number;
-  startTime: string;
-  endTime: string;
-  slotDurationMinutes?: number;
-  bufferBeforeMinutes?: number;
-  bufferAfterMinutes?: number;
+export interface ServiceTemplate {
+  category: BusinessCategory;
+  name: string;
+  durationMinutes: number;
+  price: number;
+  description: string;
 }
 
-export interface CreateBlockInput {
-  resourceId: string;
-  startTime: string;
-  endTime: string;
-  reason: BlockReason;
-  notes?: string;
-  recurring?: {
-    frequency: "daily" | "weekly" | "monthly";
-    until?: string;
-  };
+export interface PublicMerchantData {
+  merchant: Merchant;
+  services: Service[];
+  staff: StaffMember[];
+  categories: ServiceCategory[];
 }
-
-export type Asset = Resource;

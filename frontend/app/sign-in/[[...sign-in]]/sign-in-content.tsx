@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
-import { Loader2, Mail, Lock, ArrowLeft, Shield } from "lucide-react";
+import { Loader2, Mail, Lock, ArrowLeft, Shield, Smartphone } from "lucide-react";
 
 type Step = "sign-in" | "email-code" | "phone-code" | "totp";
 
@@ -22,13 +22,9 @@ export function SignInContent() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<Step>("sign-in");
-  const [pendingVerification, setPendingVerification] = useState<{
-    strategy: string;
-    firstFactor: string;
-    secondFactor?: string;
-  } | null>(null);
+  const [pendingStrategy, setPendingStrategy] = useState<string>("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isLoaded) return;
 
@@ -41,7 +37,7 @@ export function SignInContent() {
         password,
       });
 
-      console.log("Sign in result:", result);
+      console.log("Sign in result:", JSON.stringify(result, null, 2));
 
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
@@ -50,39 +46,62 @@ export function SignInContent() {
       }
 
       if (result.status === "needs_first_factor") {
-        const firstFactor = result.supportedFirstFactors?.[0];
-        if (!firstFactor) {
+        const firstFactors = result.supportedFirstFactors || [];
+        console.log("First factors available:", firstFactors);
+        
+        if (firstFactors.length === 0) {
           setError("Nenhum método de verificação disponível");
           setLoading(false);
           return;
         }
 
-        if (firstFactor.strategy === "email_code") {
-          await signIn.prepareFirstFactor({ strategy: "email_code", emailAddressId: email });
+        const emailCodeFactor = firstFactors.find(f => f.strategy === "email_code");
+        const phoneCodeFactor = firstFactors.find(f => f.strategy === "phone_code");
+
+        if (emailCodeFactor) {
+          const prepareResult = await signIn.prepareFirstFactor({
+            strategy: "email_code",
+            emailAddressId: result.identifier as string,
+          });
+          console.log("Prepare email code result:", prepareResult);
           setStep("email-code");
-          setPendingVerification({ strategy: "email_code", firstFactor: firstFactor.strategy });
-        } else if (firstFactor.strategy === "phone_code") {
-          await signIn.prepareFirstFactor({ strategy: "phone_code", phoneNumberId: firstFactor.phoneNumberId ?? "" });
+          setPendingStrategy("email_code");
+        } else if (phoneCodeFactor) {
+          await signIn.prepareFirstFactor({
+            strategy: "phone_code",
+            phoneNumberId: phoneCodeFactor.phoneNumberId || "",
+          });
           setStep("phone-code");
-          setPendingVerification({ strategy: "phone_code", firstFactor: firstFactor.strategy });
+          setPendingStrategy("phone_code");
         } else {
-          setError("Método de verificação não suportado");
+          setError(`Método de verificação não suportado. Disponíveis: ${firstFactors.map(f => f.strategy).join(", ")}`);
         }
       } else if (result.status === "needs_second_factor") {
-        const secondFactor = result.supportedSecondFactors?.[0];
-        if (secondFactor?.strategy === "totp") {
+        const secondFactors = result.supportedSecondFactors || [];
+        console.log("Second factors available:", secondFactors);
+        
+        if (secondFactors.length === 0) {
+          setError("Configuração de 2FA incompleta. Entre em contato com o suporte.");
+          setLoading(false);
+          return;
+        }
+
+        const totpFactor = secondFactors.find(f => f.strategy === "totp");
+        const phoneFactor = secondFactors.find(f => f.strategy === "phone_code");
+
+        if (totpFactor) {
           setStep("totp");
-          setPendingVerification({ strategy: "totp", firstFactor: "", secondFactor: secondFactor.strategy });
-        } else if (secondFactor?.strategy === "phone_code") {
+          setPendingStrategy("totp");
+        } else if (phoneFactor) {
           await signIn.prepareSecondFactor({ strategy: "phone_code" });
           setStep("phone-code");
-          setPendingVerification({ strategy: "phone_code", firstFactor: "", secondFactor: secondFactor.strategy });
+          setPendingStrategy("phone_code");
         } else {
-          setError("Verificação de dois fatores não suportada");
+          setError(`2FA não suportado. Disponíveis: ${secondFactors.map(f => f.strategy).join(", ")}`);
         }
       } else {
-        console.log("Unknown status:", result.status, result);
-        setError("Estado de verificação desconhecido");
+        console.log("Unknown status:", result.status);
+        setError(`Estado de autenticação desconhecido: ${result.status}`);
       }
     } catch (err: unknown) {
       console.error("Sign in error:", err);
@@ -93,7 +112,7 @@ export function SignInContent() {
     }
   };
 
-  const handleVerifyCode = async (e: React.FormEvent) => {
+  const handleVerifyFirstFactor = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isLoaded || !signIn) return;
 
@@ -101,33 +120,37 @@ export function SignInContent() {
     setError("");
 
     try {
-      let result;
-      
-      if (step === "email-code" || step === "phone-code") {
-        result = await signIn.attemptFirstFactor({
-          strategy: pendingVerification?.strategy as "email_code" | "phone_code",
-          code,
-        });
-      } else {
-        throw new Error("Invalid verification step");
-      }
+      const result = await signIn.attemptFirstFactor({
+        strategy: pendingStrategy as "email_code" | "phone_code",
+        code,
+      });
 
-      console.log("Verification result:", result);
+      console.log("First factor verification result:", JSON.stringify(result, null, 2));
 
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
         router.push("/select-org");
       } else if (result.status === "needs_second_factor") {
-        const secondFactor = result.supportedSecondFactors?.[0];
-        if (secondFactor?.strategy === "totp") {
+        const secondFactors = result.supportedSecondFactors || [];
+        console.log("Second factors after first factor:", secondFactors);
+        
+        const totpFactor = secondFactors.find(f => f.strategy === "totp");
+        const phoneFactor = secondFactors.find(f => f.strategy === "phone_code");
+
+        if (totpFactor) {
           setStep("totp");
           setCode("");
-          setPendingVerification({ strategy: "totp", firstFactor: "", secondFactor: secondFactor.strategy });
+          setPendingStrategy("totp");
+        } else if (phoneFactor) {
+          await signIn.prepareSecondFactor({ strategy: "phone_code" });
+          setStep("phone-code");
+          setCode("");
+          setPendingStrategy("phone_code");
         } else {
-          setError("Verificação adicional necessária");
+          setError("Verificação adicional necessária, mas método não suportado");
         }
       } else {
-        setError("Verificação incompleta");
+        setError(`Verificação retornou status: ${result.status}`);
       }
     } catch (err: unknown) {
       console.error("Verification error:", err);
@@ -138,7 +161,7 @@ export function SignInContent() {
     }
   };
 
-  const handleTotpVerification = async (e: React.FormEvent) => {
+  const handleVerifySecondFactor = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isLoaded || !signIn) return;
 
@@ -146,19 +169,32 @@ export function SignInContent() {
     setError("");
 
     try {
-      const result = await signIn.attemptSecondFactor({
-        strategy: "totp",
-        code,
-      });
+      let result;
+      
+      if (pendingStrategy === "totp") {
+        result = await signIn.attemptSecondFactor({
+          strategy: "totp",
+          code,
+        });
+      } else if (pendingStrategy === "phone_code") {
+        result = await signIn.attemptSecondFactor({
+          strategy: "phone_code",
+          code,
+        });
+      } else {
+        throw new Error("Invalid second factor strategy");
+      }
+
+      console.log("Second factor result:", JSON.stringify(result, null, 2));
 
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
         router.push("/select-org");
       } else {
-        setError("Verificação incompleta");
+        setError(`Verificação retornou status: ${result.status}`);
       }
     } catch (err: unknown) {
-      console.error("TOTP error:", err);
+      console.error("Second factor error:", err);
       const error = err as { errors?: Array<{ message: string }> };
       setError(error.errors?.[0]?.message || "Código inválido. Tente novamente.");
     } finally {
@@ -183,20 +219,12 @@ export function SignInContent() {
     }
   };
 
-  const renderStepTitle = () => {
-    switch (step) {
-      case "email-code":
-        return { title: "Verifique seu email", subtitle: "Enviamos um código para seu email" };
-      case "phone-code":
-        return { title: "Verifique seu telefone", subtitle: "Enviamos um código via SMS" };
-      case "totp":
-        return { title: "Verificação em duas etapas", subtitle: "Digite o código do seu aplicativo autenticador" };
-      default:
-        return { title: "Bem-vindo de volta", subtitle: "Entre na sua conta para continuar" };
-    }
+  const handleBack = () => {
+    setStep("sign-in");
+    setCode("");
+    setError("");
+    setPendingStrategy("");
   };
-
-  const stepInfo = renderStepTitle();
 
   if (step === "sign-in") {
     return (
@@ -204,16 +232,16 @@ export function SignInContent() {
         <div className="mb-8 text-center">
           <Logo variant="full" size="lg" className="mx-auto" />
           <h1 className="mt-6 text-2xl font-bold text-slate-900 dark:text-white">
-            {stepInfo.title}
+            Bem-vindo de volta
           </h1>
           <p className="mt-2 text-slate-600 dark:text-slate-400">
-            {stepInfo.subtitle}
+            Entre na sua conta para continuar
           </p>
         </div>
 
         <div className="w-full max-w-md space-y-4">
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-6">
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSignIn} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
@@ -341,6 +369,23 @@ export function SignInContent() {
     );
   }
 
+  const getStepInfo = () => {
+    switch (step) {
+      case "email-code":
+        return { title: "Verifique seu email", subtitle: "Enviamos um código para seu email", icon: Mail };
+      case "phone-code":
+        return { title: "Verifique seu telefone", subtitle: "Enviamos um código via SMS", icon: Smartphone };
+      case "totp":
+        return { title: "Autenticação em duas etapas", subtitle: "Digite o código do seu aplicativo autenticador", icon: Shield };
+      default:
+        return { title: "Verificação", subtitle: "Digite o código", icon: Shield };
+    }
+  };
+
+  const stepInfo = getStepInfo();
+  const StepIcon = stepInfo.icon;
+  const isSecondFactor = step === "totp";
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">
       <div className="mb-8 text-center">
@@ -354,10 +399,13 @@ export function SignInContent() {
       </div>
 
       <div className="w-full max-w-md space-y-4">
-        <form onSubmit={step === "totp" ? handleTotpVerification : handleVerifyCode} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-4">
+        <form 
+          onSubmit={isSecondFactor ? handleVerifySecondFactor : handleVerifyFirstFactor} 
+          className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-4"
+        >
           <div className="flex justify-center mb-4">
             <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <Shield className="h-8 w-8 text-primary" />
+              <StepIcon className="h-8 w-8 text-primary" />
             </div>
           </div>
 
@@ -397,12 +445,7 @@ export function SignInContent() {
           type="button"
           variant="ghost"
           className="w-full"
-          onClick={() => {
-            setStep("sign-in");
-            setCode("");
-            setError("");
-            setPendingVerification(null);
-          }}
+          onClick={handleBack}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Voltar

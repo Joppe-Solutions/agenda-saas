@@ -40,7 +40,7 @@ export function Logo({ variant = "full", size = "md", className, forceTheme }: L
       <div className={cn("relative", className)} style={{ width: height, height }}>
         <Image
           src={logoSrc}
-          alt="reserva.online"
+          alt="agendae.me"
           fill
           className="object-contain"
           priority
@@ -53,7 +53,7 @@ export function Logo({ variant = "full", size = "md", className, forceTheme }: L
     <div className={cn("relative", className)} style={{ width: height * 4, height }}>
       <Image
         src={logoSrc}
-        alt="reserva.online"
+        alt="agendae.me"
         fill
         className="object-contain"
         priority

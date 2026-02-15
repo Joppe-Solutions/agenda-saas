@@ -1,9 +1,9 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { CalendarDays, DollarSign, Users, TrendingUp, AlertTriangle, Ship, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { CalendarDays, DollarSign, Users, TrendingUp, Clock, CheckCircle2, AlertCircle, Tag, User } from "lucide-react";
 import { StatsCard, QuickActions } from "@/components/dashboard";
-import { getDashboardSummary, getTodaysBookings, listMerchantResources } from "@/lib/api";
+import { getDashboardSummary, getTodaysBookings, listMerchantServices, listMerchantStaff } from "@/lib/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,20 +18,23 @@ export default async function DashboardPage() {
 
   const merchantId = orgId ?? userId;
 
-  let summary = { bookingsToday: 0, pendingToday: 0, monthRevenue: 0, pendingBookings: 0, totalResources: 0, activeResources: 0 };
+  let summary = { bookingsToday: 0, pendingToday: 0, monthRevenue: 0, pendingPayments: 0, totalServices: 0, activeServices: 0, totalStaff: 0, activeStaff: 0, totalCustomers: 0, newCustomersMonth: 0 };
   let todaysBookings: Booking[] = [];
-  let resources: { id: string; name: string }[] = [];
+  let servicesCount = 0;
+  let staffCount = 0;
   let hasError = false;
 
   try {
-    const [summaryData, bookingsData, resourcesData] = await Promise.all([
+    const [summaryData, bookingsData, servicesData, staffData] = await Promise.all([
       getDashboardSummary(userId),
       getTodaysBookings(userId),
-      listMerchantResources(userId),
+      listMerchantServices(userId),
+      listMerchantStaff(userId),
     ]);
     summary = summaryData;
     todaysBookings = bookingsData.bookings;
-    resources = resourcesData.resources;
+    servicesCount = servicesData.services.length;
+    staffCount = staffData.staff.length;
   } catch (error) {
     console.error("Error fetching dashboard data:", error);
     hasError = true;
@@ -46,7 +49,7 @@ export default async function DashboardPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Visão Geral</h1>
           <p className="text-muted-foreground">
-            Acompanhe suas reservas e métricas do negócio
+            Acompanhe seus agendamentos e métricas do negócio
           </p>
         </div>
 
@@ -54,7 +57,7 @@ export default async function DashboardPage() {
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-100 dark:bg-cyan-800">
-                <AlertTriangle className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                <AlertCircle className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
               </div>
               <div>
                 <CardTitle className="text-cyan-800 dark:text-cyan-300">Backend não disponível</CardTitle>
@@ -100,14 +103,14 @@ export default async function DashboardPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatsCard
-          title="Reservas Hoje"
+          title="Agendamentos Hoje"
           value={summary.bookingsToday.toString()}
           icon={CalendarDays}
-          description="confirmadas"
+          description="confirmados"
           className={summary.bookingsToday > 0 ? "border-l-4 border-l-green-500" : ""}
         />
         <StatsCard
-          title="Aguardando Sinal"
+          title="Aguardando Pagamento"
           value={summary.pendingToday.toString()}
           icon={Clock}
           description="pendentes hoje"
@@ -117,31 +120,52 @@ export default async function DashboardPage() {
           title="Faturamento do Mês"
           value={`R$ ${summary.monthRevenue.toFixed(2)}`}
           icon={DollarSign}
-          description="sinais confirmados"
+          description="total confirmado"
           trend={{ value: 12, isPositive: true }}
         />
         <StatsCard
-          title="Recursos Ativos"
-          value={`${summary.activeResources}/${summary.totalResources}`}
-          icon={Ship}
+          title="Serviços Ativos"
+          value={`${summary.activeServices}/${summary.totalServices}`}
+          icon={Tag}
           description="disponíveis"
         />
       </div>
 
-      {summary.totalResources === 0 && (
+      {summary.totalServices === 0 && (
         <Card className="border-brand-cyan/50 bg-brand-cyan/5">
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-cyan/20">
-                <Ship className="h-5 w-5 text-brand-cyan" />
+                <Tag className="h-5 w-5 text-brand-cyan" />
               </div>
               <div className="flex-1">
-                <h3 className="font-medium text-brand-blue-800 dark:text-brand-cyan">Comece cadastrando seus recursos</h3>
+                <h3 className="font-medium text-brand-blue-800 dark:text-brand-cyan">Comece cadastrando seus serviços</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Adicione barcos, quadras, salas ou qualquer recurso que seus clientes possam reservar.
+                  Adicione cortes, massagens, consultas ou qualquer serviço que seus clientes possam agendar.
                 </p>
-                <Button size="sm" className="mt-3 bg-brand-yellow hover:bg-brand-yellow/90 text-brand-blue-950" asChild>
-                  <Link href="/dashboard/assets">Cadastrar Recursos</Link>
+                <Button size="sm" className="mt-3" asChild>
+                  <Link href="/dashboard/services">Cadastrar Serviços</Link>
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {staffCount === 0 && servicesCount > 0 && (
+        <Card className="border-primary/50 bg-primary/5">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20">
+                <User className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium">Cadastre sua equipe</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Adicione profissionais para gerenciar agendas individuais.
+                </p>
+                <Button size="sm" variant="outline" className="mt-3" asChild>
+                  <Link href="/dashboard/staff">Cadastrar Profissionais</Link>
                 </Button>
               </div>
             </div>
@@ -155,11 +179,11 @@ export default async function DashboardPage() {
             <div className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
               <CardTitle className="text-base text-yellow-800 dark:text-yellow-300">
-                Aguardando Sinal ({pendingPayments.length})
+                Aguardando Pagamento ({pendingPayments.length})
               </CardTitle>
             </div>
             <CardDescription className="text-yellow-700 dark:text-yellow-400">
-              Reservas que precisam de pagamento para confirmar
+              Agendamentos que precisam de pagamento para confirmar
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -169,7 +193,7 @@ export default async function DashboardPage() {
                   <div>
                     <p className="font-medium text-sm">{booking.customerName}</p>
                     <p className="text-xs text-muted-foreground">
-                      {booking.resourceName} • R$ {booking.depositAmount.toFixed(2)}
+                      {booking.serviceName} • {booking.startTime} • R$ {booking.depositAmount.toFixed(2)}
                     </p>
                   </div>
                   <Button size="sm" variant="outline" className="text-xs" asChild>
@@ -188,15 +212,15 @@ export default async function DashboardPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Reservas de Hoje</CardTitle>
+                  <CardTitle>Agendamentos de Hoje</CardTitle>
                   <CardDescription>
                     {todaysBookings.length === 0 
-                      ? "Nenhuma reserva para hoje" 
-                      : `${todaysBookings.length} reserva${todaysBookings.length > 1 ? 's' : ''} agendada${todaysBookings.length > 1 ? 's' : ''}`}
+                      ? "Nenhum agendamento para hoje" 
+                      : `${todaysBookings.length} agendamento${todaysBookings.length > 1 ? 's' : ''}`}
                   </CardDescription>
                 </div>
                 <Button variant="outline" size="sm" asChild>
-                  <Link href="/dashboard/bookings">Ver Todas</Link>
+                  <Link href="/dashboard/bookings">Ver Todos</Link>
                 </Button>
               </div>
             </CardHeader>
@@ -205,10 +229,10 @@ export default async function DashboardPage() {
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <CalendarDays className="h-10 w-10 text-muted-foreground/50 mb-3" />
                   <p className="text-sm text-muted-foreground">
-                    Nenhuma reserva para hoje
+                    Nenhum agendamento para hoje
                   </p>
                   <Button variant="outline" size="sm" className="mt-3" asChild>
-                    <Link href="/dashboard/bookings/new">Criar Reserva</Link>
+                    <Link href="/dashboard/bookings/new">Criar Agendamento</Link>
                   </Button>
                 </div>
               ) : (
@@ -219,15 +243,15 @@ export default async function DashboardPage() {
                         <div className="flex flex-col">
                           <span className="font-medium">{booking.customerName}</span>
                           <span className="text-sm text-muted-foreground">
-                            {booking.resourceName}
+                            {booking.serviceName}
+                            {booking.staffName && ` • ${booking.staffName}`}
                             {booking.startTime && ` • ${booking.startTime}`}
                           </span>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="text-right">
-                          <p className="text-sm font-medium">{booking.peopleCount} pessoa{booking.peopleCount > 1 ? 's' : ''}</p>
-                          <p className="text-xs text-muted-foreground">R$ {booking.totalAmount.toFixed(2)}</p>
+                          <p className="text-sm font-medium">R$ {booking.totalAmount.toFixed(2)}</p>
                         </div>
                         <Badge className={BOOKING_STATUS_COLORS[booking.status]}>
                           {BOOKING_STATUS_LABELS[booking.status]}
@@ -254,7 +278,7 @@ export default async function DashboardPage() {
                   <p className="text-2xl font-bold text-green-700 dark:text-green-300 mt-1">
                     R$ {summary.monthRevenue.toFixed(2)}
                   </p>
-                  <p className="text-xs text-green-600 dark:text-green-400">sinais este mês</p>
+                  <p className="text-xs text-green-600 dark:text-green-400">este mês</p>
                 </div>
                 <div className="rounded-lg bg-yellow-50 dark:bg-yellow-900/20 p-4">
                   <div className="flex items-center gap-2 text-yellow-600 dark:text-yellow-400">
@@ -276,18 +300,28 @@ export default async function DashboardPage() {
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Alertas</CardTitle>
+              <CardTitle className="text-base">Resumo</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Serviços</span>
+                <span className="font-medium">{servicesCount}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Profissionais</span>
+                <span className="font-medium">{staffCount}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Clientes</span>
+                <span className="font-medium">{summary.totalCustomers}</span>
+              </div>
               {pendingPayments.length > 0 ? (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm text-yellow-600 dark:text-yellow-400">
-                    <AlertCircle className="h-4 w-4" />
-                    <span>{pendingPayments.length} reserva{pendingPayments.length > 1 ? 's' : ''} aguardando sinal</span>
-                  </div>
+                <div className="flex items-center gap-2 text-sm text-yellow-600 dark:text-yellow-400 pt-2 border-t">
+                  <AlertCircle className="h-4 w-4" />
+                  <span>{pendingPayments.length} aguardando pagamento</span>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 pt-2 border-t">
                   <CheckCircle2 className="h-4 w-4" />
                   <span>Tudo em ordem!</span>
                 </div>

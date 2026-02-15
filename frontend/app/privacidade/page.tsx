@@ -75,8 +75,8 @@ export default function PrivacidadePage() {
       <h2>9. Contato</h2>
       <p>
         Para exercer seus direitos ou esclarecer dúvidas sobre esta política, entre em contato através do e-mail{" "}
-        <a href="mailto:privacidade@reserva.online" className="text-primary hover:underline">
-          privacidade@reserva.online
+        <a href="mailto:privacidade@agendae.me" className="text-primary hover:underline">
+          privacidade@agendae.me
         </a>
         .
       </p>

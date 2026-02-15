@@ -17,23 +17,23 @@ const clerkLocalization = ptBR as unknown as ComponentProps<typeof ClerkProvider
 
 export const metadata: Metadata = {
   title: {
-    default: "reserva.online - Sistema de Reservas Online",
-    template: "%s | reserva.online",
+    default: "agendae.me - Sistema de Reservas Online",
+    template: "%s | agendae.me",
   },
   description: "Simplifique suas reservas. Gerencie agendamentos, receba pagamentos e escale seu negócio com facilidade.",
   keywords: ["reservas online", "agendamento", "booking", "gestão de reservas", "pagamentos", "PIX"],
-  authors: [{ name: "reserva.online" }],
-  creator: "reserva.online",
+  authors: [{ name: "agendae.me" }],
+  creator: "agendae.me",
   openGraph: {
-    title: "reserva.online - Sistema de Reservas Online",
+    title: "agendae.me - Sistema de Reservas Online",
     description: "Simplifique suas reservas. Gerencie agendamentos, receba pagamentos e escale seu negócio.",
     type: "website",
     locale: "pt_BR",
-    siteName: "reserva.online",
+    siteName: "agendae.me",
   },
   twitter: {
     card: "summary_large_image",
-    title: "reserva.online - Sistema de Reservas Online",
+    title: "agendae.me - Sistema de Reservas Online",
     description: "Simplifique suas reservas. Gerencie agendamentos, receba pagamentos e escale seu negócio.",
   },
   icons: {

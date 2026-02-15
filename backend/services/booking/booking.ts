@@ -1,25 +1,20 @@
 import { randomUUID } from "node:crypto";
 import { api, APIError } from "encore.dev/api";
+import { z } from "zod";
 import { db } from "../../db/db";
 import { createBookingSchema, updateBookingStatusSchema } from "../shared/validators";
 import { createPixPayment, PaymentProvider } from "../merchant/gateway";
 import type { Booking } from "../shared/types";
 
-interface CheckAvailabilityParams {
-  resourceId: string;
-  date: string;
-}
-
 interface CreateBookingBody {
-  resourceId: string;
+  serviceId: string;
+  staffId?: string;
   merchantId: string;
   customerName: string;
   customerPhone: string;
   customerEmail?: string;
   bookingDate: string;
-  startTime?: string;
-  endTime?: string;
-  peopleCount: number;
+  startTime: string;
   notes?: string;
 }
 
@@ -28,45 +23,41 @@ interface MerchantBookingsParams {
   status?: Booking["status"];
   fromDate?: string;
   toDate?: string;
-}
-
-interface UpdateBookingStatusParams {
-  merchantId: string;
-  bookingId: string;
-}
-
-interface UpdateBookingStatusBody {
-  status: Booking["status"];
-  internalNotes?: string;
-}
-
-interface GetBookingParams {
-  bookingId: string;
+  staffId?: string;
 }
 
 async function checkTimeConflict(
-  resourceId: string,
+  serviceId: string,
+  staffId: string | undefined,
   bookingDate: string,
-  startTime: string | undefined,
-  endTime: string | undefined,
+  startTime: string,
+  endTime: string,
   excludeBookingId?: string
 ): Promise<boolean> {
-  if (!startTime || !endTime) {
-    const fullDayConflict = await db.queryRow<{ total: number }>`
+  if (staffId) {
+    const conflict = await db.queryRow<{ total: number }>`
       SELECT COUNT(*)::int AS total
       FROM bookings
-      WHERE resource_id = ${resourceId}
+      WHERE staff_id = ${staffId}
         AND booking_date = ${bookingDate}::date
         AND status NOT IN ('cancelled', 'no_show')
         AND id != ${excludeBookingId ?? null}
+        AND start_time < ${endTime}
+        AND end_time > ${startTime}
     `;
-    return (fullDayConflict?.total ?? 0) > 0;
+    return (conflict?.total ?? 0) > 0;
   }
 
-  const slotConflict = await db.queryRow<{ total: number }>`
-    SELECT COUNT(*)::int AS total
+  const service = await db.queryRow<{ max_concurrent_bookings: number }>`
+    SELECT max_concurrent_bookings FROM services WHERE id = ${serviceId}
+  `;
+
+  const maxConcurrent = service?.max_concurrent_bookings ?? 1;
+
+  const overlapCount = await db.queryRow<{ count: number }>`
+    SELECT COUNT(*)::int AS count
     FROM bookings
-    WHERE resource_id = ${resourceId}
+    WHERE service_id = ${serviceId}
       AND booking_date = ${bookingDate}::date
       AND status NOT IN ('cancelled', 'no_show')
       AND id != ${excludeBookingId ?? null}
@@ -74,76 +65,27 @@ async function checkTimeConflict(
       AND end_time > ${startTime}
   `;
 
-  return (slotConflict?.total ?? 0) > 0;
+  return (overlapCount?.count ?? 0) >= maxConcurrent;
 }
 
-async function checkBlockConflict(
-  resourceId: string,
+async function checkStaffBlock(
+  staffId: string | undefined,
   bookingDate: string,
-  startTime: string | undefined,
-  endTime: string | undefined
+  startTime: string,
+  endTime: string
 ): Promise<boolean> {
-  if (!startTime || !endTime) {
-    const fullDayBlock = await db.queryRow<{ total: number }>`
-      SELECT COUNT(*)::int AS total
-      FROM blocks
-      WHERE resource_id = ${resourceId}
-        AND start_time <= ${bookingDate}::date + INTERVAL '1 day'
-        AND end_time >= ${bookingDate}::date
-    `;
-    return (fullDayBlock?.total ?? 0) > 0;
-  }
+  if (!staffId) return false;
 
-  const slotBlock = await db.queryRow<{ total: number }>`
+  const block = await db.queryRow<{ total: number }>`
     SELECT COUNT(*)::int AS total
-    FROM blocks
-    WHERE resource_id = ${resourceId}
+    FROM staff_blocks
+    WHERE staff_id = ${staffId}
       AND start_time < (${bookingDate}::date || ' ' || ${endTime} || ':00')::timestamptz
       AND end_time > (${bookingDate}::date || ' ' || ${startTime} || ':00')::timestamptz
   `;
 
-  return (slotBlock?.total ?? 0) > 0;
+  return (block?.total ?? 0) > 0;
 }
-
-export const checkAvailability = api(
-  { expose: true, method: "GET", path: "/booking/availability/:resourceId/:date" },
-  async ({ resourceId, date }: CheckAvailabilityParams) => {
-    const resource = await db.queryRow<{ id: string }>`
-      SELECT id FROM resources WHERE id = ${resourceId} AND active = TRUE
-    `;
-
-    if (!resource) {
-      throw APIError.notFound("Resource not found or inactive");
-    }
-
-    const hasConflict = await checkTimeConflict(resourceId, date, undefined, undefined);
-    const hasBlock = await checkBlockConflict(resourceId, date, undefined, undefined);
-
-    return {
-      available: !hasConflict && !hasBlock,
-    };
-  },
-);
-
-export const checkTimeSlotAvailability = api(
-  { expose: true, method: "GET", path: "/booking/availability/:resourceId/:date/:startTime/:endTime" },
-  async ({ resourceId, date, startTime, endTime }: CheckAvailabilityParams & { startTime: string; endTime: string }) => {
-    const resource = await db.queryRow<{ id: string }>`
-      SELECT id FROM resources WHERE id = ${resourceId} AND active = TRUE
-    `;
-
-    if (!resource) {
-      throw APIError.notFound("Resource not found or inactive");
-    }
-
-    const hasConflict = await checkTimeConflict(resourceId, date, startTime, endTime);
-    const hasBlock = await checkBlockConflict(resourceId, date, startTime, endTime);
-
-    return {
-      available: !hasConflict && !hasBlock,
-    };
-  },
-);
 
 export const createBooking = api(
   { expose: true, method: "POST", path: "/booking" },
@@ -153,36 +95,51 @@ export const createBooking = api(
       throw APIError.invalidArgument("Invalid request body", parsed.error);
     }
 
-    const resource = await db.queryRow<{
-      base_price: number;
-      capacity: number;
-      pricing_type: string;
-      duration_minutes: number | null;
+    const service = await db.queryRow<{
+      duration_minutes: number;
+      price: number;
       buffer_before_minutes: number;
       buffer_after_minutes: number;
+      require_deposit: boolean;
+      deposit_amount: number | null;
+      deposit_percentage: number | null;
     }>`
-      SELECT base_price, capacity, pricing_type, duration_minutes, buffer_before_minutes, buffer_after_minutes
-      FROM resources
-      WHERE id = ${parsed.data.resourceId}
+      SELECT duration_minutes, price, buffer_before_minutes, buffer_after_minutes,
+             require_deposit, deposit_amount, deposit_percentage
+      FROM services
+      WHERE id = ${parsed.data.serviceId}
         AND merchant_id = ${parsed.data.merchantId}
         AND active = TRUE
     `;
 
-    if (!resource) {
-      throw APIError.notFound("Resource not found");
+    if (!service) {
+      throw APIError.notFound("Service not found");
     }
 
-    if (parsed.data.peopleCount > resource.capacity) {
-      throw APIError.invalidArgument(`Capacidade máxima: ${resource.capacity} pessoas`);
+    if (parsed.data.staffId) {
+      const staff = await db.queryRow<{ id: string }>`
+        SELECT sm.id FROM staff_members sm
+        JOIN staff_services ss ON ss.staff_id = sm.id
+        WHERE sm.id = ${parsed.data.staffId}
+          AND sm.merchant_id = ${parsed.data.merchantId}
+          AND sm.active = TRUE
+          AND ss.service_id = ${parsed.data.serviceId}
+      `;
+
+      if (!staff) {
+        throw APIError.notFound("Staff member not found or not assigned to this service");
+      }
     }
 
     const merchant = await db.queryRow<{
-      signal_percentage: number;
-      signal_deadline_minutes: number;
-      signal_auto_cancel: boolean;
+      deposit_percentage: number;
+      deposit_deadline_minutes: number;
+      require_deposit: boolean;
       mercado_pago_access_token: string | null;
+      allow_online_payment: boolean;
     }>`
-      SELECT signal_percentage, signal_deadline_minutes, signal_auto_cancel, mercado_pago_access_token
+      SELECT deposit_percentage, deposit_deadline_minutes, require_deposit, 
+             mercado_pago_access_token, allow_online_payment
       FROM merchants WHERE id = ${parsed.data.merchantId}
     `;
 
@@ -190,49 +147,51 @@ export const createBooking = api(
       throw APIError.notFound("Merchant not found");
     }
 
-    let startTime = parsed.data.startTime;
-    let endTime = parsed.data.endTime;
+    const [startH, startM] = parsed.data.startTime.split(":").map(Number);
+    const endMinutes = startH * 60 + startM + service.duration_minutes;
+    const endTime = `${String(Math.floor(endMinutes / 60)).padStart(2, "0")}:${String(endMinutes % 60).padStart(2, "0")}`;
 
-    if (!startTime && !endTime) {
-      if (resource.pricing_type === "HOURLY" || resource.pricing_type === "SLOT") {
-        throw APIError.invalidArgument("Horário inicial é obrigatório para este tipo de recurso");
-      }
-    }
-
-    if (startTime && !endTime) {
-      if (resource.duration_minutes) {
-        const [hours, minutes] = startTime.split(":").map(Number);
-        const endMinutes = hours * 60 + minutes + resource.duration_minutes;
-        const endHours = Math.floor(endMinutes / 60);
-        const endMins = endMinutes % 60;
-        endTime = `${String(endHours).padStart(2, "0")}:${String(endMins).padStart(2, "0")}`;
-      } else {
-        throw APIError.invalidArgument("Horário final é obrigatório quando duração não está definida");
-      }
-    }
-
-    const hasConflict = await checkTimeConflict(parsed.data.resourceId, parsed.data.bookingDate, startTime, endTime);
+    const hasConflict = await checkTimeConflict(
+      parsed.data.serviceId, 
+      parsed.data.staffId, 
+      parsed.data.bookingDate, 
+      parsed.data.startTime, 
+      endTime
+    );
     if (hasConflict) {
       throw APIError.alreadyExists("Horário já reservado");
     }
 
-    const hasBlock = await checkBlockConflict(parsed.data.resourceId, parsed.data.bookingDate, startTime, endTime);
+    const hasBlock = await checkStaffBlock(
+      parsed.data.staffId, 
+      parsed.data.bookingDate, 
+      parsed.data.startTime, 
+      endTime
+    );
     if (hasBlock) {
-      throw APIError.alreadyExists("Horário bloqueado");
+      throw APIError.alreadyExists("Profissional indisponível neste horário");
     }
 
     const minAdvanceMinutes = 30;
     const now = new Date();
-    const bookingDateTime = new Date(`${parsed.data.bookingDate}T${startTime || "00:00"}:00`);
+    const bookingDateTime = new Date(`${parsed.data.bookingDate}T${parsed.data.startTime}:00`);
     if (bookingDateTime.getTime() - now.getTime() < minAdvanceMinutes * 60 * 1000) {
       throw APIError.invalidArgument(`Mínimo ${minAdvanceMinutes} minutos de antecedência`);
     }
 
     const bookingId = randomUUID();
-    const totalAmount = Number(resource.base_price);
-    const depositAmount = Number((totalAmount * merchant.signal_percentage / 100).toFixed(2));
+    const totalAmount = Number(service.price);
+    
+    let depositAmount = 0;
+    if (service.deposit_amount) {
+      depositAmount = Number(service.deposit_amount);
+    } else if (service.deposit_percentage) {
+      depositAmount = Number((totalAmount * service.deposit_percentage / 100).toFixed(2));
+    } else if (merchant.require_deposit) {
+      depositAmount = Number((totalAmount * merchant.deposit_percentage / 100).toFixed(2));
+    }
 
-    const signalExpiresAt = new Date(now.getTime() + merchant.signal_deadline_minutes * 60 * 1000);
+    const depositExpiresAt = new Date(now.getTime() + merchant.deposit_deadline_minutes * 60 * 1000);
 
     let customerId: string | null = null;
     const existingCustomer = await db.queryRow<{ id: string }>`
@@ -250,19 +209,32 @@ export const createBooking = api(
       `;
     }
 
+    const initialStatus = depositAmount > 0 && merchant.allow_online_payment ? "pending_payment" : "confirmed";
+
     await db.exec`
       INSERT INTO bookings (
-        id, resource_id, merchant_id, customer_id, customer_name, customer_phone, customer_email,
-        booking_date, start_time, end_time, people_count, status, deposit_amount, total_amount,
-        notes, signal_expires_at
+        id, service_id, staff_id, merchant_id, customer_id, customer_name, customer_phone, customer_email,
+        booking_date, start_time, end_time, status, deposit_amount, total_amount,
+        notes, deposit_expires_at
       ) VALUES (
-        ${bookingId}, ${parsed.data.resourceId}, ${parsed.data.merchantId}, ${customerId}, 
+        ${bookingId}, ${parsed.data.serviceId}, ${parsed.data.staffId ?? null}, ${parsed.data.merchantId}, ${customerId}, 
         ${parsed.data.customerName}, ${parsed.data.customerPhone}, ${parsed.data.customerEmail ?? null},
-        ${parsed.data.bookingDate}::date, ${startTime ?? null}, ${endTime ?? null}, 
-        ${parsed.data.peopleCount}, 'pending_payment', ${depositAmount}, ${totalAmount},
-        ${parsed.data.notes ?? null}, ${signalExpiresAt.toISOString()}
+        ${parsed.data.bookingDate}::date, ${parsed.data.startTime}, ${endTime}, 
+        ${initialStatus}, ${depositAmount}, ${totalAmount},
+        ${parsed.data.notes ?? null}, ${depositExpiresAt.toISOString()}
       )
     `;
+
+    if (initialStatus === "confirmed") {
+      return {
+        bookingId,
+        status: "confirmed" as const,
+        depositAmount: 0,
+        totalAmount,
+        depositExpiresAt: undefined,
+        payment: undefined,
+      };
+    }
 
     const provider: PaymentProvider = merchant.mercado_pago_access_token ? "MERCADO_PAGO" : "STUB";
 
@@ -305,7 +277,7 @@ export const createBooking = api(
       status: "pending_payment" as const,
       depositAmount,
       totalAmount,
-      signalExpiresAt: signalExpiresAt.toISOString(),
+      depositExpiresAt: depositExpiresAt.toISOString(),
       payment,
     };
   },
@@ -313,34 +285,43 @@ export const createBooking = api(
 
 export const getBooking = api(
   { expose: true, method: "GET", path: "/booking/:bookingId" },
-  async ({ bookingId }: GetBookingParams): Promise<{ booking: Booking }> => {
+  async ({ bookingId }: { bookingId: string }): Promise<{ booking: Booking }> => {
     const row = await db.queryRow<{
       id: string;
-      resource_id: string;
+      service_id: string;
+      staff_id: string | null;
       merchant_id: string;
       customer_id: string | null;
       customer_name: string;
       customer_phone: string;
       customer_email: string | null;
       booking_date: Date;
-      start_time: string | null;
-      end_time: string | null;
-      people_count: number;
+      start_time: string;
+      end_time: string;
       status: Booking["status"];
       deposit_amount: number;
       total_amount: number;
       payment_id: string | null;
+      payment_method: string | null;
       qr_code: string | null;
       copy_paste_code: string | null;
       notes: string | null;
       internal_notes: string | null;
-      signal_expires_at: Date | null;
+      deposit_expires_at: Date | null;
+      loyalty_points_earned: number;
+      created_at: Date;
+      service_name: string;
+      staff_name: string | null;
     }>`
-      SELECT id, resource_id, merchant_id, customer_id, customer_name, customer_phone, customer_email,
-             booking_date, start_time, end_time, people_count, status, deposit_amount, total_amount,
-             payment_id, qr_code, copy_paste_code, notes, internal_notes, signal_expires_at
-      FROM bookings
-      WHERE id = ${bookingId}
+      SELECT b.id, b.service_id, b.staff_id, b.merchant_id, b.customer_id, b.customer_name, b.customer_phone, b.customer_email,
+             b.booking_date, b.start_time, b.end_time, b.status, b.deposit_amount, b.total_amount,
+             b.payment_id, b.payment_method, b.qr_code, b.copy_paste_code, b.notes, b.internal_notes, 
+             b.deposit_expires_at, b.loyalty_points_earned, b.created_at,
+             s.name as service_name, sm.name as staff_name
+      FROM bookings b
+      JOIN services s ON s.id = b.service_id
+      LEFT JOIN staff_members sm ON sm.id = b.staff_id
+      WHERE b.id = ${bookingId}
     `;
 
     if (!row) {
@@ -350,25 +331,27 @@ export const getBooking = api(
     return {
       booking: {
         id: row.id,
-        resourceId: row.resource_id,
+        serviceId: row.service_id,
+        staffId: row.staff_id ?? undefined,
         merchantId: row.merchant_id,
         customerId: row.customer_id ?? undefined,
         customerName: row.customer_name,
         customerPhone: row.customer_phone,
         customerEmail: row.customer_email ?? undefined,
         bookingDate: row.booking_date.toISOString().split('T')[0],
-        startTime: row.start_time ?? undefined,
-        endTime: row.end_time ?? undefined,
-        peopleCount: row.people_count,
+        startTime: row.start_time,
+        endTime: row.end_time,
         status: row.status,
         depositAmount: Number(row.deposit_amount),
         totalAmount: Number(row.total_amount),
         paymentId: row.payment_id,
+        paymentMethod: row.payment_method as Booking["paymentMethod"] ?? undefined,
         qrCode: row.qr_code ?? undefined,
         copyPasteCode: row.copy_paste_code ?? undefined,
         notes: row.notes ?? undefined,
         internalNotes: row.internal_notes ?? undefined,
-        signalExpiresAt: row.signal_expires_at?.toISOString(),
+        depositExpiresAt: row.deposit_expires_at?.toISOString(),
+        loyaltyPointsEarned: row.loyalty_points_earned,
       },
     };
   },
@@ -376,19 +359,19 @@ export const getBooking = api(
 
 export const listMerchantBookings = api(
   { expose: true, method: "GET", path: "/merchant/:merchantId/bookings" },
-  async ({ merchantId, status, fromDate, toDate }: MerchantBookingsParams) => {
+  async ({ merchantId, status, fromDate, toDate, staffId }: MerchantBookingsParams) => {
     const rows = await db.queryAll<{
       id: string;
-      resource_id: string;
+      service_id: string;
+      staff_id: string | null;
       merchant_id: string;
       customer_id: string | null;
       customer_name: string;
       customer_phone: string;
       customer_email: string | null;
       booking_date: Date;
-      start_time: string | null;
-      end_time: string | null;
-      people_count: number;
+      start_time: string;
+      end_time: string;
       status: Booking["status"];
       deposit_amount: number;
       total_amount: number;
@@ -397,37 +380,40 @@ export const listMerchantBookings = api(
       copy_paste_code: string | null;
       notes: string | null;
       internal_notes: string | null;
-      signal_expires_at: Date | null;
+      deposit_expires_at: Date | null;
       created_at: Date;
-      resource_name: string;
+      service_name: string;
+      staff_name: string | null;
     }>`
-      SELECT b.id, b.resource_id, b.merchant_id, b.customer_id, b.customer_name, b.customer_phone, b.customer_email,
-             b.booking_date, b.start_time, b.end_time, b.people_count, b.status, b.deposit_amount, b.total_amount,
-             b.payment_id, b.qr_code, b.copy_paste_code, b.notes, b.internal_notes, b.signal_expires_at, b.created_at,
-             r.name as resource_name
+      SELECT b.id, b.service_id, b.staff_id, b.merchant_id, b.customer_id, b.customer_name, b.customer_phone, b.customer_email,
+             b.booking_date, b.start_time, b.end_time, b.status, b.deposit_amount, b.total_amount,
+             b.payment_id, b.qr_code, b.copy_paste_code, b.notes, b.internal_notes, b.deposit_expires_at, b.created_at,
+             s.name as service_name, sm.name as staff_name
       FROM bookings b
-      LEFT JOIN resources r ON b.resource_id = r.id
+      JOIN services s ON s.id = b.service_id
+      LEFT JOIN staff_members sm ON sm.id = b.staff_id
       WHERE b.merchant_id = ${merchantId}
         AND (${status}::text IS NULL OR b.status = ${status})
         AND (${fromDate}::text IS NULL OR b.booking_date >= ${fromDate}::date)
         AND (${toDate}::text IS NULL OR b.booking_date <= ${toDate}::date)
-      ORDER BY b.booking_date DESC, b.start_time ASC NULLS LAST, b.created_at DESC
+        AND (${staffId}::uuid IS NULL OR b.staff_id = ${staffId})
+      ORDER BY b.booking_date DESC, b.start_time ASC, b.created_at DESC
       LIMIT 200
     `;
 
     return {
       bookings: rows.map((row) => ({
         id: row.id,
-        resourceId: row.resource_id,
+        serviceId: row.service_id,
+        staffId: row.staff_id ?? undefined,
         merchantId: row.merchant_id,
         customerId: row.customer_id ?? undefined,
         customerName: row.customer_name,
         customerPhone: row.customer_phone,
         customerEmail: row.customer_email ?? undefined,
         bookingDate: row.booking_date.toISOString().split('T')[0],
-        startTime: row.start_time ?? undefined,
-        endTime: row.end_time ?? undefined,
-        peopleCount: row.people_count,
+        startTime: row.start_time,
+        endTime: row.end_time,
         status: row.status,
         depositAmount: Number(row.deposit_amount),
         totalAmount: Number(row.total_amount),
@@ -436,9 +422,11 @@ export const listMerchantBookings = api(
         copyPasteCode: row.copy_paste_code ?? undefined,
         notes: row.notes ?? undefined,
         internalNotes: row.internal_notes ?? undefined,
-        signalExpiresAt: row.signal_expires_at?.toISOString(),
+        depositExpiresAt: row.deposit_expires_at?.toISOString(),
         createdAt: row.created_at.toISOString(),
-        resourceName: row.resource_name,
+        serviceName: row.service_name,
+        staffName: row.staff_name ?? undefined,
+        loyaltyPointsEarned: 0,
       })),
     };
   },
@@ -446,7 +434,7 @@ export const listMerchantBookings = api(
 
 export const updateBookingStatus = api(
   { expose: true, method: "PATCH", path: "/merchant/:merchantId/bookings/:bookingId/status" },
-  async ({ merchantId, bookingId, ...body }: UpdateBookingStatusParams & UpdateBookingStatusBody) => {
+  async ({ merchantId, bookingId, ...body }: { merchantId: string; bookingId: string } & z.infer<typeof updateBookingStatusSchema>) => {
     const parsed = updateBookingStatusSchema.safeParse(body);
     if (!parsed.success) {
       throw APIError.invalidArgument("Invalid request body", parsed.error);
@@ -456,7 +444,7 @@ export const updateBookingStatus = api(
       id: string; 
       status: Booking["status"];
       booking_date: Date;
-      start_time: string | null;
+      start_time: string;
       deposit_amount: number;
     }>`
       SELECT id, status, booking_date, start_time, deposit_amount
@@ -486,8 +474,8 @@ export const updateBookingStatus = api(
 
     if (parsed.data.status === "cancelled") {
       const merchant = await db.queryRow<{
-        cancellation_deadline_hours: number | null;
-        cancellation_refund_percentage: number | null;
+        cancellation_deadline_hours: number;
+        cancellation_refund_percentage: number;
       }>`
         SELECT cancellation_deadline_hours, cancellation_refund_percentage
         FROM merchants WHERE id = ${merchantId}
@@ -496,7 +484,7 @@ export const updateBookingStatus = api(
       const deadlineHours = merchant?.cancellation_deadline_hours ?? 24;
       const refundPercentage = merchant?.cancellation_refund_percentage ?? 0;
 
-      const bookingDateTime = new Date(`${booking.booking_date.toISOString().split('T')[0]}T${booking.start_time || "00:00"}:00`);
+      const bookingDateTime = new Date(`${booking.booking_date.toISOString().split('T')[0]}T${booking.start_time}:00`);
       const now = new Date();
       const hoursUntilBooking = (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
 
@@ -527,12 +515,7 @@ export const cancelExpiredBookings = api(
       SELECT id, merchant_id
       FROM bookings
       WHERE status = 'pending_payment'
-        AND signal_expires_at < now()
-        AND EXISTS (
-          SELECT 1 FROM merchants 
-          WHERE merchants.id = bookings.merchant_id 
-          AND merchants.signal_auto_cancel = TRUE
-        )
+        AND deposit_expires_at < now()
     `;
 
     for (const booking of expiredBookings) {
@@ -553,30 +536,25 @@ export const cancelExpiredBookings = api(
   },
 );
 
-interface RescheduleBookingParams {
-  bookingId: string;
-}
-
-interface RescheduleBookingBody {
-  newDate: string;
-  newStartTime?: string;
-  newEndTime?: string;
-}
-
 export const rescheduleBooking = api(
   { expose: true, method: "POST", path: "/booking/:bookingId/reschedule" },
-  async ({ bookingId, newDate, newStartTime, newEndTime }: RescheduleBookingParams & RescheduleBookingBody) => {
+  async ({ bookingId, newDate, newStartTime, staffId }: { 
+    bookingId: string; 
+    newDate: string; 
+    newStartTime?: string;
+    staffId?: string;
+  }) => {
     const booking = await db.queryRow<{
       id: string;
       merchant_id: string;
-      resource_id: string;
+      service_id: string;
+      staff_id: string | null;
       status: Booking["status"];
       customer_name: string;
       customer_phone: string;
       customer_email: string | null;
-      people_count: number;
     }>`
-      SELECT id, merchant_id, resource_id, status, customer_name, customer_phone, customer_email, people_count
+      SELECT id, merchant_id, service_id, staff_id, status, customer_name, customer_phone, customer_email
       FROM bookings
       WHERE id = ${bookingId}
     `;
@@ -589,79 +567,110 @@ export const rescheduleBooking = api(
       throw APIError.invalidArgument("Cannot reschedule a cancelled, completed or no-show booking");
     }
 
-    const hasConflict = await checkTimeConflict(booking.resource_id, newDate, newStartTime, newEndTime, bookingId);
+    const service = await db.queryRow<{ duration_minutes: number }>`
+      SELECT duration_minutes FROM services WHERE id = ${booking.service_id}
+    `;
+
+    if (!service) {
+      throw APIError.notFound("Service not found");
+    }
+
+    const startTime = newStartTime || "09:00";
+    const [startH, startM] = startTime.split(":").map(Number);
+    const endMinutes = startH * 60 + startM + service.duration_minutes;
+    const endTime = `${String(Math.floor(endMinutes / 60)).padStart(2, "0")}:${String(endMinutes % 60).padStart(2, "0")}`;
+
+    const effectiveStaffId = staffId || booking.staff_id || undefined;
+
+    const hasConflict = await checkTimeConflict(
+      booking.service_id, 
+      effectiveStaffId, 
+      newDate, 
+      startTime, 
+      endTime, 
+      bookingId
+    );
     if (hasConflict) {
       throw APIError.alreadyExists("New time slot is not available");
     }
 
-    const hasBlock = await checkBlockConflict(booking.resource_id, newDate, newStartTime, newEndTime);
+    const hasBlock = await checkStaffBlock(effectiveStaffId, newDate, startTime, endTime);
     if (hasBlock) {
-      throw APIError.alreadyExists("New time slot is blocked");
+      throw APIError.alreadyExists("Staff member is blocked at this time");
     }
 
     await db.exec`
       UPDATE bookings
       SET 
         booking_date = ${newDate}::date,
-        start_time = ${newStartTime ?? null},
-        end_time = ${newEndTime ?? null},
+        start_time = ${startTime},
+        end_time = ${endTime},
+        staff_id = ${effectiveStaffId ?? null},
         updated_at = now()
       WHERE id = ${bookingId}
     `;
 
     const updated = await db.queryRow<{
       id: string;
-      resource_id: string;
+      service_id: string;
+      staff_id: string | null;
       merchant_id: string;
       customer_name: string;
       customer_phone: string;
       customer_email: string | null;
       booking_date: Date;
-      start_time: string | null;
-      end_time: string | null;
-      people_count: number;
+      start_time: string;
+      end_time: string;
       status: Booking["status"];
       deposit_amount: number;
       total_amount: number;
       notes: string | null;
       internal_notes: string | null;
+      service_name: string;
+      staff_name: string | null;
     }>`
-      SELECT id, resource_id, merchant_id, customer_name, customer_phone, customer_email,
-             booking_date, start_time, end_time, people_count, status, deposit_amount, total_amount,
-             notes, internal_notes
-      FROM bookings
-      WHERE id = ${bookingId}
+      SELECT b.id, b.service_id, b.staff_id, b.merchant_id, b.customer_name, b.customer_phone, b.customer_email,
+             b.booking_date, b.start_time, b.end_time, b.status, b.deposit_amount, b.total_amount,
+             b.notes, b.internal_notes, s.name as service_name, sm.name as staff_name
+      FROM bookings b
+      JOIN services s ON s.id = b.service_id
+      LEFT JOIN staff_members sm ON sm.id = b.staff_id
+      WHERE b.id = ${bookingId}
     `;
 
     return {
       booking: {
         id: updated!.id,
-        resourceId: updated!.resource_id,
+        serviceId: updated!.service_id,
+        staffId: updated!.staff_id ?? undefined,
         merchantId: updated!.merchant_id,
         customerName: updated!.customer_name,
         customerPhone: updated!.customer_phone,
         customerEmail: updated!.customer_email ?? undefined,
         bookingDate: updated!.booking_date.toISOString().split('T')[0],
-        startTime: updated!.start_time ?? undefined,
-        endTime: updated!.end_time ?? undefined,
-        peopleCount: updated!.people_count,
+        startTime: updated!.start_time,
+        endTime: updated!.end_time,
         status: updated!.status,
         depositAmount: Number(updated!.deposit_amount),
         totalAmount: Number(updated!.total_amount),
         notes: updated!.notes ?? undefined,
         internalNotes: updated!.internal_notes ?? undefined,
+        serviceName: updated!.service_name,
+        staffName: updated!.staff_name ?? undefined,
+        loyaltyPointsEarned: 0,
+        paymentId: null,
       },
     };
   },
 );
 
-export const retryPayment = api(
+export const retryBookingPayment = api(
   { expose: true, method: "POST", path: "/booking/:bookingId/retry-payment" },
   async ({ bookingId }: { bookingId: string }) => {
     const booking = await db.queryRow<{
       id: string;
       merchant_id: string;
-      resource_id: string;
+      service_id: string;
       status: Booking["status"];
       customer_name: string;
       customer_phone: string;
@@ -670,7 +679,7 @@ export const retryPayment = api(
       total_amount: number;
       payment_id: string | null;
     }>`
-      SELECT id, merchant_id, resource_id, status, customer_name, customer_phone, customer_email, 
+      SELECT id, merchant_id, service_id, status, customer_name, customer_phone, customer_email, 
              deposit_amount, total_amount, payment_id
       FROM bookings
       WHERE id = ${bookingId}
@@ -681,14 +690,14 @@ export const retryPayment = api(
     }
 
     if (booking.status !== "pending_payment" && booking.status !== "cancelled") {
-      throw APIError.invalidArgument("Só é possível reenviar cobrança para reservas aguardando pagamento ou canceladas");
+      throw APIError.invalidArgument("Só é possível reenviar cobrança para agendamentos aguardando pagamento ou cancelados");
     }
 
     const merchant = await db.queryRow<{
-      signal_deadline_minutes: number;
+      deposit_deadline_minutes: number;
       mercado_pago_access_token: string | null;
     }>`
-      SELECT signal_deadline_minutes, mercado_pago_access_token
+      SELECT deposit_deadline_minutes, mercado_pago_access_token
       FROM merchants WHERE id = ${booking.merchant_id}
     `;
 
@@ -697,7 +706,7 @@ export const retryPayment = api(
     }
 
     const now = new Date();
-    const signalExpiresAt = new Date(now.getTime() + merchant.signal_deadline_minutes * 60 * 1000);
+    const depositExpiresAt = new Date(now.getTime() + merchant.deposit_deadline_minutes * 60 * 1000);
 
     const provider: PaymentProvider = merchant.mercado_pago_access_token ? "MERCADO_PAGO" : "STUB";
 
@@ -736,7 +745,7 @@ export const retryPayment = api(
         payment_id = ${payment.paymentId}, 
         qr_code = ${payment.qrCode}, 
         copy_paste_code = ${payment.copyPasteCode},
-        signal_expires_at = ${signalExpiresAt.toISOString()},
+        deposit_expires_at = ${depositExpiresAt.toISOString()},
         updated_at = now()
       WHERE id = ${bookingId}
     `;
@@ -747,7 +756,7 @@ export const retryPayment = api(
         paymentId: payment.paymentId,
         qrCode: payment.qrCode,
         copyPasteCode: payment.copyPasteCode,
-        expiresAt: signalExpiresAt.toISOString(),
+        expiresAt: depositExpiresAt.toISOString(),
       },
     };
   },
@@ -759,23 +768,29 @@ export const getBookingReceipt = api(
     const booking = await db.queryRow<{
       id: string;
       merchant_id: string;
-      resource_id: string;
+      service_id: string;
+      staff_id: string | null;
       customer_name: string;
       customer_phone: string;
       customer_email: string | null;
       booking_date: Date;
-      start_time: string | null;
-      end_time: string | null;
-      people_count: number;
+      start_time: string;
+      end_time: string;
       status: Booking["status"];
       deposit_amount: number;
       total_amount: number;
       created_at: Date;
+      service_name: string;
+      staff_name: string | null;
+      duration_minutes: number;
     }>`
-      SELECT id, merchant_id, resource_id, customer_name, customer_phone, customer_email,
-             booking_date, start_time, end_time, people_count, status, deposit_amount, total_amount, created_at
-      FROM bookings
-      WHERE id = ${bookingId}
+      SELECT b.id, b.merchant_id, b.service_id, b.staff_id, b.customer_name, b.customer_phone, b.customer_email,
+             b.booking_date, b.start_time, b.end_time, b.status, b.deposit_amount, b.total_amount, b.created_at,
+             s.name as service_name, s.duration_minutes, sm.name as staff_name
+      FROM bookings b
+      JOIN services s ON s.id = b.service_id
+      LEFT JOIN staff_members sm ON sm.id = b.staff_id
+      WHERE b.id = ${bookingId}
     `;
 
     if (!booking) {
@@ -799,13 +814,6 @@ export const getBookingReceipt = api(
       throw APIError.notFound("Merchant not found");
     }
 
-    const resource = await db.queryRow<{
-      name: string;
-      resource_type: string;
-    }>`
-      SELECT name, resource_type FROM resources WHERE id = ${booking.resource_id}
-    `;
-
     const payment = await db.queryRow<{
       id: string;
       amount: number;
@@ -826,13 +834,14 @@ export const getBookingReceipt = api(
         customerPhone: booking.customer_phone,
         customerEmail: booking.customer_email ?? undefined,
         bookingDate: booking.booking_date.toISOString().split('T')[0],
-        startTime: booking.start_time ?? undefined,
-        endTime: booking.end_time ?? undefined,
-        peopleCount: booking.people_count,
+        startTime: booking.start_time,
+        endTime: booking.end_time,
         status: booking.status,
         depositAmount: Number(booking.deposit_amount),
         totalAmount: Number(booking.total_amount),
         createdAt: booking.created_at.toISOString(),
+        serviceName: booking.service_name,
+        staffName: booking.staff_name ?? undefined,
       },
       merchant: {
         businessName: merchant.business_name,
@@ -843,9 +852,9 @@ export const getBookingReceipt = api(
         city: merchant.city ?? undefined,
         pixKey: merchant.pix_key,
       },
-      resource: {
-        name: resource?.name ?? "Recurso",
-        type: resource?.resource_type ?? "OTHER",
+      service: {
+        name: booking.service_name,
+        durationMinutes: booking.duration_minutes,
       },
       payment: payment ? {
         id: payment.id,

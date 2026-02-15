@@ -1,20 +1,5 @@
-export const merchantNiches = ["FISHING", "SPORTS", "TOURISM", "SERVICES"] as const;
-export type MerchantNiche = "FISHING" | "SPORTS" | "TOURISM" | "SERVICES";
-
-export const resourceTypes = [
-  "BOAT",
-  "SPORTS_COURT",
-  "CONSULTING_ROOM",
-  "EVENT_SPACE",
-  "EQUIPMENT",
-  "PROFESSIONAL",
-  "VACATION_RENTAL",
-  "OTHER",
-] as const;
-export type ResourceType = "BOAT" | "SPORTS_COURT" | "CONSULTING_ROOM" | "EVENT_SPACE" | "EQUIPMENT" | "PROFESSIONAL" | "VACATION_RENTAL" | "OTHER";
-
-export const pricingTypes = ["FULL_DAY", "HOURLY", "SLOT", "PER_PERSON"] as const;
-export type PricingType = "FULL_DAY" | "HOURLY" | "SLOT" | "PER_PERSON";
+export const businessCategories = ["BEAUTY", "HEALTH", "WELLNESS", "EDUCATION", "SERVICES", "PET"] as const;
+export type BusinessCategory = "BEAUTY" | "HEALTH" | "WELLNESS" | "EDUCATION" | "SERVICES" | "PET";
 
 export const bookingStatuses = [
   "pending_payment",
@@ -26,66 +11,104 @@ export const bookingStatuses = [
 ] as const;
 export type BookingStatus = "pending_payment" | "confirmed" | "in_progress" | "completed" | "cancelled" | "no_show";
 
-export const blockReasons = ["maintenance", "vacation", "weather", "other"] as const;
-export type BlockReason = "maintenance" | "vacation" | "weather" | "other";
+export const paymentStatuses = ["pending", "approved", "rejected", "refunded"] as const;
+export type PaymentStatus = "pending" | "approved" | "rejected" | "refunded";
+
+export const paymentMethods = ["PIX", "CREDIT_CARD", "CASH"] as const;
+export type PaymentMethod = "PIX" | "CREDIT_CARD" | "CASH";
+
+export const paymentProviders = ["MERCADO_PAGO", "STUB"] as const;
+export type PaymentProvider = "MERCADO_PAGO" | "STUB";
+
+export const blockReasons = ["day_off", "vacation", "holiday", "other"] as const;
+export type BlockReason = "day_off" | "vacation" | "holiday" | "other";
 
 export interface Merchant {
   id: string;
   slug: string;
   businessName: string;
-  niche: MerchantNiche;
+  businessCategory: BusinessCategory;
   whatsappNumber: string;
   pixKey: string;
   email?: string;
   mercadoPagoAccessToken?: string;
   address?: string;
   city?: string;
-  signalPercentage: number;
-  signalDeadlineMinutes: number;
-  signalAutoCancel: boolean;
+  logo?: string;
+  primaryColor?: string;
+  requireDeposit: boolean;
+  depositPercentage: number;
+  depositDeadlineMinutes: number;
+  autoConfirmOnPayment: boolean;
+  allowOnlinePayment: boolean;
   cancellationDeadlineHours: number;
   cancellationRefundPercentage: number;
+  enableReminders: boolean;
+  reminderHoursBefore: number;
+  enableLoyalty: boolean;
+  pointsPerReal: number;
 }
 
-export interface Resource {
+export interface ServiceCategory {
   id: string;
   merchantId: string;
   name: string;
-  description?: string;
-  resourceType: ResourceType;
-  capacity: number;
-  basePrice: number;
-  pricingType: PricingType;
-  durationMinutes?: number;
-  bufferBeforeMinutes: number;
-  bufferAfterMinutes: number;
-  photos: string[];
-  terms?: string;
+  icon?: string;
+  color?: string;
+  order: number;
   active: boolean;
 }
 
-export interface AvailabilityRule {
+export interface Service {
   id: string;
-  resourceId: string;
+  merchantId: string;
+  categoryId?: string;
+  name: string;
+  description?: string;
+  durationMinutes: number;
+  price: number;
+  bufferBeforeMinutes: number;
+  bufferAfterMinutes: number;
+  maxConcurrentBookings: number;
+  photos: string[];
+  active: boolean;
+  requireDeposit: boolean;
+  depositAmount?: number;
+  depositPercentage?: number;
+  allowStaffSelection: boolean;
+  order: number;
+}
+
+export interface StaffMember {
+  id: string;
+  merchantId: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  photo?: string;
+  bio?: string;
+  active: boolean;
+  commissionPercentage?: number;
+  services: string[];
+}
+
+export interface StaffAvailability {
+  id: string;
+  staffId: string;
   dayOfWeek: number;
   startTime: string;
   endTime: string;
-  slotDurationMinutes: number;
-  bufferBeforeMinutes: number;
-  bufferAfterMinutes: number;
+  breakStart?: string;
+  breakEnd?: string;
 }
 
-export interface Block {
+export interface StaffBlock {
   id: string;
-  resourceId: string;
+  staffId: string;
   startTime: string;
   endTime: string;
   reason: BlockReason;
-  notes: string;
-  recurring: {
-    frequency: "daily" | "weekly" | "monthly";
-    until: string;
-  } | null;
+  notes?: string;
 }
 
 export interface Customer {
@@ -95,7 +118,12 @@ export interface Customer {
   phone: string;
   email?: string;
   document?: string;
+  birthDate?: string;
   notes?: string;
+  loyaltyPoints: number;
+  totalBookings: number;
+  totalSpent: number;
+  lastVisit?: string;
 }
 
 export interface CustomerTag {
@@ -107,25 +135,28 @@ export interface CustomerTag {
 
 export interface Booking {
   id: string;
-  resourceId: string;
+  serviceId: string;
+  staffId?: string;
   merchantId: string;
   customerId?: string;
   customerName: string;
   customerPhone: string;
   customerEmail?: string;
   bookingDate: string;
-  startTime?: string;
-  endTime?: string;
-  peopleCount: number;
+  startTime: string;
+  endTime: string;
   status: BookingStatus;
   depositAmount: number;
   totalAmount: number;
   paymentId: string | null;
+  paymentMethod?: PaymentMethod;
   qrCode?: string;
   copyPasteCode?: string;
   notes?: string;
   internalNotes?: string;
-  signalExpiresAt?: string;
+  depositExpiresAt?: string;
+  reminderSentAt?: string;
+  loyaltyPointsEarned: number;
 }
 
 export interface Payment {
@@ -133,9 +164,9 @@ export interface Payment {
   bookingId: string;
   merchantId: string;
   amount: number;
-  status: "pending" | "approved" | "rejected" | "refunded";
-  paymentMethod: "PIX";
-  provider: "MERCADO_PAGO" | "STUB";
+  status: PaymentStatus;
+  paymentMethod: PaymentMethod;
+  provider: PaymentProvider;
   providerPaymentId: string;
   qrCode?: string;
   copyPasteCode?: string;
@@ -147,90 +178,33 @@ export interface TimeSlot {
   startTime: string;
   endTime: string;
   available: boolean;
-  bookingId?: string;
+  staffId?: string;
+  staffName?: string;
 }
 
-export interface ResourceTemplate {
-  type: ResourceType;
+export interface ServiceTemplate {
+  category: BusinessCategory;
   name: string;
-  icon: string;
-  defaultCapacity: number;
-  defaultPricingType: PricingType;
-  defaultDurationMinutes?: number;
+  durationMinutes: number;
+  price: number;
   description: string;
 }
 
-export const resourceTemplates: ResourceTemplate[] = [
-  {
-    type: "BOAT",
-    name: "Barco",
-    icon: "🚤",
-    defaultCapacity: 6,
-    defaultPricingType: "FULL_DAY",
-    defaultDurationMinutes: 480,
-    description: "Barco de pesca, passeio ou turismo",
-  },
-  {
-    type: "SPORTS_COURT",
-    name: "Quadra",
-    icon: "⚽",
-    defaultCapacity: 20,
-    defaultPricingType: "HOURLY",
-    defaultDurationMinutes: 60,
-    description: "Quadra esportiva (futebol, tênis, vôlei, etc.)",
-  },
-  {
-    type: "CONSULTING_ROOM",
-    name: "Consultório/Sala",
-    icon: "🏥",
-    defaultCapacity: 1,
-    defaultPricingType: "HOURLY",
-    defaultDurationMinutes: 60,
-    description: "Sala para consultas, atendimentos ou reuniões",
-  },
-  {
-    type: "EVENT_SPACE",
-    name: "Espaço de Eventos",
-    icon: "🎉",
-    defaultCapacity: 50,
-    defaultPricingType: "SLOT",
-    defaultDurationMinutes: 240,
-    description: "Espaço para festas, eventos ou celebrações",
-  },
-  {
-    type: "EQUIPMENT",
-    name: "Equipamento",
-    icon: "🎮",
-    defaultCapacity: 1,
-    defaultPricingType: "HOURLY",
-    defaultDurationMinutes: 60,
-    description: "Equipamentos, consoles, máquinas ou ferramentas",
-  },
-  {
-    type: "PROFESSIONAL",
-    name: "Profissional",
-    icon: "✂️",
-    defaultCapacity: 1,
-    defaultPricingType: "HOURLY",
-    defaultDurationMinutes: 30,
-    description: "Agenda de profissional (barbeiro, dentista, consultor, etc.)",
-  },
-  {
-    type: "VACATION_RENTAL",
-    name: "Imóvel Temporada",
-    icon: "🏠",
-    defaultCapacity: 4,
-    defaultPricingType: "FULL_DAY",
-    defaultDurationMinutes: 1440,
-    description: "Casa, apartamento ou chalé para aluguel",
-  },
-  {
-    type: "OTHER",
-    name: "Outro",
-    icon: "📦",
-    defaultCapacity: 1,
-    defaultPricingType: "HOURLY",
-    defaultDurationMinutes: 60,
-    description: "Outro tipo de recurso reservável",
-  },
+export const serviceTemplates: ServiceTemplate[] = [
+  { category: "BEAUTY", name: "Corte de Cabelo", durationMinutes: 30, price: 50, description: "Corte masculino ou feminino" },
+  { category: "BEAUTY", name: "Barba", durationMinutes: 20, price: 30, description: "Aparar e modelar barba" },
+  { category: "BEAUTY", name: "Manicure", durationMinutes: 45, price: 40, description: "Unhas das mãos" },
+  { category: "BEAUTY", name: "Pedicure", durationMinutes: 50, price: 45, description: "Unhas dos pés" },
+  { category: "BEAUTY", name: "Sobrancelha", durationMinutes: 20, price: 25, description: "Design de sobrancelha" },
+  { category: "HEALTH", name: "Consulta", durationMinutes: 30, price: 150, description: "Consulta médica" },
+  { category: "HEALTH", name: "Retorno", durationMinutes: 15, price: 80, description: "Consulta de retorno" },
+  { category: "HEALTH", name: "Exame", durationMinutes: 30, price: 100, description: "Exame clínico" },
+  { category: "WELLNESS", name: "Massagem Relaxante", durationMinutes: 60, price: 120, description: "Massagem corporal relaxante" },
+  { category: "WELLNESS", name: "Aula de Yoga", durationMinutes: 60, price: 50, description: "Aula em grupo" },
+  { category: "WELLNESS", name: "Acupuntura", durationMinutes: 45, price: 150, description: "Sessão de acupuntura" },
+  { category: "EDUCATION", name: "Aula Particular", durationMinutes: 60, price: 80, description: "Aula individual" },
+  { category: "EDUCATION", name: "Tutoria", durationMinutes: 60, price: 100, description: "Reforço escolar" },
+  { category: "SERVICES", name: "Consulta Geral", durationMinutes: 30, price: 100, description: "Atendimento geral" },
+  { category: "PET", name: "Banho e Tosa", durationMinutes: 60, price: 70, description: "Banho e tosa completa" },
+  { category: "PET", name: "Consulta Veterinária", durationMinutes: 30, price: 120, description: "Consulta clínica" },
 ];

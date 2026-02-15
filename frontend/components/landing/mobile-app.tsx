@@ -66,7 +66,7 @@ export function MobileApp() {
                   transition={{ duration: 0.6, delay: 0.3 }}
                   className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 tracking-tight leading-tight"
                 >
-                  Leve o reserva.online
+                  Leve o agendae.me
                   <span className="block text-primary">no seu bolso</span>
                 </motion.h2>
 
@@ -142,7 +142,7 @@ export function MobileApp() {
                   <div className="relative">
                     <Image
                       src="/images/app_mockup.png"
-                      alt="Aplicativo reserva.online"
+                      alt="Aplicativo agendae.me"
                       width={320}
                       height={640}
                       className="w-[280px] sm:w-[320px] h-auto drop-shadow-2xl"

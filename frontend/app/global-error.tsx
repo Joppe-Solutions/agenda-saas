@@ -146,10 +146,10 @@ export default function GlobalError({
             >
               Se o problema persistir, entre em contato com{" "}
               <a
-                href="mailto:suporte@reserva.online"
+                href="mailto:suporte@agendae.me"
                 style={{ color: "#2563eb", textDecoration: "none" }}
               >
-                suporte@reserva.online
+                suporte@agendae.me
               </a>
             </p>
           </div>

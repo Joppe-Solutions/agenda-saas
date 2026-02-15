@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { RefreshCw, TrendingUp, DollarSign, CalendarDays, Users, BarChart3, AlertTriangle, Ship, UserX } from "lucide-react";
+import { RefreshCw, TrendingUp, DollarSign, CalendarDays, Users, BarChart3, AlertTriangle, Scissors, UserX, User } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getReportsSummary } from "@/lib/api";
@@ -20,11 +20,18 @@ interface ReportSummary {
   pendingRevenue: number;
   avgBookingValue: number;
   noShowRate: number;
-  topResources: Array<{
-    resourceId: string;
-    resourceName: string;
+  topServices: Array<{
+    serviceId: string;
+    serviceName: string;
     bookingCount: number;
     revenue: number;
+  }>;
+  topStaff: Array<{
+    staffId: string;
+    staffName: string;
+    bookingCount: number;
+    revenue: number;
+    commission: number;
   }>;
   dailyBreakdown: Array<{
     date: string;
@@ -128,7 +135,7 @@ export function ReportsPage({ merchantId }: ReportsPageProps) {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Reservas</p>
+                <p className="text-sm font-medium text-muted-foreground">Agendamentos</p>
                 <p className="text-2xl font-bold">{summary.confirmedBookings}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   de {summary.totalBookings} total
@@ -180,28 +187,28 @@ export function ReportsPage({ merchantId }: ReportsPageProps) {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Top Recursos</CardTitle>
-            <CardDescription>Recursos mais reservados no período</CardDescription>
+            <CardTitle>Top Serviços</CardTitle>
+            <CardDescription>Serviços mais agendados no período</CardDescription>
           </CardHeader>
           <CardContent>
-            {summary.topResources.length === 0 ? (
+            {summary.topServices.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
-                <Ship className="h-10 w-10 text-muted-foreground/50 mb-3" />
-                <p className="text-sm text-muted-foreground">Sem reservas no período</p>
+                <Scissors className="h-10 w-10 text-muted-foreground/50 mb-3" />
+                <p className="text-sm text-muted-foreground">Sem agendamentos no período</p>
               </div>
             ) : (
               <div className="space-y-4">
-                {summary.topResources.map((resource, index) => (
-                  <div key={resource.resourceId} className="flex items-center justify-between">
+                {summary.topServices.map((service, index) => (
+                  <div key={service.serviceId} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-cyan/20 text-xs font-medium text-brand-cyan">
                         {index + 1}
                       </span>
-                      <span className="text-sm font-medium">{resource.resourceName}</span>
+                      <span className="text-sm font-medium">{service.serviceName}</span>
                     </div>
                     <div className="flex items-center gap-4">
-                      <span className="text-sm text-muted-foreground">{resource.bookingCount} reservas</span>
-                      <span className="text-sm font-medium text-brand-yellow">R$ {resource.revenue.toFixed(2)}</span>
+                      <span className="text-sm text-muted-foreground">{service.bookingCount} agendamentos</span>
+                      <span className="text-sm font-medium text-brand-yellow">R$ {service.revenue.toFixed(2)}</span>
                     </div>
                   </div>
                 ))}
@@ -212,7 +219,39 @@ export function ReportsPage({ merchantId }: ReportsPageProps) {
 
         <Card>
           <CardHeader>
-            <CardTitle>Status das Reservas</CardTitle>
+            <CardTitle>Top Profissionais</CardTitle>
+            <CardDescription>Profissionais com mais agendamentos</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {summary.topStaff.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <User className="h-10 w-10 text-muted-foreground/50 mb-3" />
+                <p className="text-sm text-muted-foreground">Sem dados no período</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {summary.topStaff.map((staff, index) => (
+                  <div key={staff.staffId} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-yellow/20 text-xs font-medium text-brand-yellow">
+                        {index + 1}
+                      </span>
+                      <span className="text-sm font-medium">{staff.staffName}</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm text-muted-foreground">{staff.bookingCount} agendamentos</span>
+                      <span className="text-sm font-medium">R$ {staff.revenue.toFixed(2)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Status dos Agendamentos</CardTitle>
             <CardDescription>Visão geral do período</CardDescription>
           </CardHeader>
           <CardContent>
@@ -241,7 +280,7 @@ export function ReportsPage({ merchantId }: ReportsPageProps) {
             </div>
 
             <div className="mt-6 pt-4 border-t">
-              <p className="text-sm text-muted-foreground mb-2">Total: {summary.totalBookings} reservas</p>
+              <p className="text-sm text-muted-foreground mb-2">Total: {summary.totalBookings} agendamentos</p>
               {summary.totalBookings > 0 && (
                 <div className="flex h-4 w-full overflow-hidden rounded-full bg-muted">
                   <div

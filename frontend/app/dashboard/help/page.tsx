@@ -49,10 +49,10 @@ export default function HelpPage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">
-              Envie sua dúvida para suporte@reserva.online
+              Envie sua dúvida para suporte@agendae.me
             </p>
             <Button variant="outline" className="w-full" asChild>
-              <a href="mailto:suporte@reserva.online">
+              <a href="mailto:suporte@agendae.me">
                 <Mail className="mr-2 h-4 w-4" />
                 Enviar E-mail
               </a>
@@ -106,7 +106,7 @@ export default function HelpPage() {
               Como compartilhar minha página de reservas?
             </h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Sua página está disponível em reserva.online/[seu-slug]. 
+              Sua página está disponível em agendae.me/[seu-slug]. 
               Compartilhe esse link nas redes sociais, WhatsApp ou no seu site.
             </p>
           </div>

@@ -27,7 +27,7 @@ export default function SobrePage() {
         
         <div className="container relative mx-auto max-w-4xl px-4 text-center">
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-            Sobre o reserva.online
+            Sobre o agendae.me
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-muted-foreground text-lg">
             Nascemos com a missão de simplificar a vida de quem trabalha com reservas.
@@ -95,7 +95,7 @@ export default function SobrePage() {
 
       <footer className="border-t bg-muted/30">
         <div className="container mx-auto max-w-4xl px-4 py-8 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} reserva.online. Todos os direitos reservados.</p>
+          <p>© {new Date().getFullYear()} agendae.me. Todos os direitos reservados.</p>
           <div className="mt-4 flex justify-center gap-6">
             <Link href="/privacidade" className="hover:text-foreground transition-colors">Privacidade</Link>
             <Link href="/termos" className="hover:text-foreground transition-colors">Termos</Link>

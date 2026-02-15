@@ -42,7 +42,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { updateBookingStatus, rescheduleBooking, retryBookingPayment, getBookingReceipt } from "@/lib/api";
 import type { Booking, BookingStatus } from "@/lib/types";
-import { BOOKING_STATUS_LABELS, BOOKING_STATUS_COLORS, RESOURCE_TYPE_LABELS } from "@/lib/types";
+import { BOOKING_STATUS_LABELS, BOOKING_STATUS_COLORS } from "@/lib/types";
 
 interface ReservationsTableProps {
   merchantId: string;
@@ -216,9 +216,8 @@ export function ReservationsTable({ merchantId, initialBookings }: ReservationsT
           <TableHeader>
             <TableRow>
               <TableHead>Cliente</TableHead>
-              <TableHead>Recurso</TableHead>
+              <TableHead>Serviço</TableHead>
               <TableHead>Data/Hora</TableHead>
-              <TableHead>Pessoas</TableHead>
               <TableHead>Valor</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-12"></TableHead>
@@ -248,7 +247,12 @@ export function ReservationsTable({ merchantId, initialBookings }: ReservationsT
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm">{booking.resourceName || '-'}</span>
+                    <div>
+                      <span className="text-sm font-medium">{booking.serviceName || '-'}</span>
+                      {booking.staffName && (
+                        <p className="text-xs text-muted-foreground">{booking.staffName}</p>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -262,12 +266,6 @@ export function ReservationsTable({ merchantId, initialBookings }: ReservationsT
                           </p>
                         )}
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      {booking.peopleCount}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -544,12 +542,12 @@ export function ReservationsTable({ merchantId, initialBookings }: ReservationsT
 
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <p className="text-muted-foreground">Recurso</p>
-                    <p className="font-medium">{receiptData.resource.name}</p>
+                    <p className="text-muted-foreground">Serviço</p>
+                    <p className="font-medium">{receiptData.service.name}</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">Pessoas</p>
-                    <p className="font-medium">{receiptData.booking.peopleCount}</p>
+                    <p className="text-muted-foreground">Profissional</p>
+                    <p className="font-medium">{receiptData.booking.staffName || "Não definido"}</p>
                   </div>
                 </div>
 
@@ -620,15 +618,15 @@ export function ReservationsTable({ merchantId, initialBookings }: ReservationsT
                 asChild
               >
                 <a
-                  href={`https://wa.me/${receiptData.booking.customerPhone.replace(/\D/g, '')}?text=${encodeURIComponent(`*COMPROVANTE DE RESERVA*\n\n` +
+                  href={`https://wa.me/${receiptData.booking.customerPhone.replace(/\D/g, '')}?text=${encodeURIComponent(`*COMPROVANTE DE AGENDAMENTO*\n\n` +
                     `${receiptData.merchant.businessName}\n` +
-                    `Reserva: ${receiptData.booking.id.slice(0, 8).toUpperCase()}\n` +
+                    `Agendamento: ${receiptData.booking.id.slice(0, 8).toUpperCase()}\n` +
                     `Status: ${BOOKING_STATUS_LABELS[receiptData.booking.status as BookingStatus]}\n\n` +
                     `*Cliente:* ${receiptData.booking.customerName}\n` +
-                    `*Recurso:* ${receiptData.resource.name}\n` +
+                    `*Serviço:* ${receiptData.service.name}\n` +
+                    `*Profissional:* ${receiptData.booking.staffName || "Não definido"}\n` +
                     `*Data:* ${format(new Date(receiptData.booking.bookingDate + "T12:00:00"), "dd/MM/yyyy", { locale: ptBR })}\n` +
-                    `*Horário:* ${receiptData.booking.startTime || "Dia inteiro"}${receiptData.booking.endTime ? ` - ${receiptData.booking.endTime}` : ""}\n` +
-                    `*Pessoas:* ${receiptData.booking.peopleCount}\n\n` +
+                    `*Horário:* ${receiptData.booking.startTime || "Dia inteiro"}${receiptData.booking.endTime ? ` - ${receiptData.booking.endTime}` : ""}\n\n` +
                     `*Valor Total:* R$ ${receiptData.booking.totalAmount.toFixed(2)}\n` +
                     `*Sinal Pago:* R$ ${receiptData.booking.depositAmount.toFixed(2)}\n` +
                     `*Saldo Restante:* R$ ${(receiptData.booking.totalAmount - receiptData.booking.depositAmount).toFixed(2)}`)}`}

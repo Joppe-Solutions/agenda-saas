@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
 
-export const alt = "reserva.online - Sistema de Reservas Online";
+export const alt = "agendae.me - Sistema de Agendamentos Online";
 export const size = {
   width: 1200,
   height: 630,
@@ -56,7 +56,7 @@ export default async function Image() {
               color: "white",
             }}
           >
-            reserva.online
+            agendae.me
           </span>
         </div>
         <div
@@ -76,7 +76,7 @@ export default async function Image() {
               lineHeight: 1.2,
             }}
           >
-            Reservas online
+            Agendamentos online
           </h1>
           <h1
             style={{

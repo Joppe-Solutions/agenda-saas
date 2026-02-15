@@ -12,7 +12,7 @@ const footerLinks = {
   empresa: [
     { label: "Sobre Nós", href: "/sobre" },
     { label: "Blog", href: "/blog" },
-    { label: "Contato", href: "mailto:contato@reserva.online" },
+    { label: "Contato", href: "mailto:contato@agendae.me" },
   ],
   legal: [
     { label: "Termos de Uso", href: "/termos" },
@@ -105,7 +105,7 @@ export function Footer() {
 
         <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t pt-8 sm:flex-row">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} reserva.online. Todos os direitos reservados.
+            © {new Date().getFullYear()} agendae.me. Todos os direitos reservados.
           </p>
         </div>
       </div>
